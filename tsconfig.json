@@ -1,0 +1,19 @@
+{
+	"extends": "@tsconfig/node14/tsconfig.json",
+	"compilerOptions": {
+    "declaration": true,
+		"moduleResolution": "node",
+
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+
+		"removeComments": true,
+		"sourceMap": true,
+
+		"outDir": "./lib"
+	},
+	"include": [
+		"src/**/*"
+	],
+	"exclude": []
+}

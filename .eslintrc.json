@@ -1,0 +1,36 @@
+{
+  "root": true,
+  "env": {
+      "browser": false,
+      "es2021": true
+  },
+  "extends": [
+      "standard-with-typescript"
+  ],
+  "globals": {},
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+      "ecmaVersion": 2021,
+      "project": [
+          "tsconfig.json"
+      ]
+  },
+  "plugins": [
+      "@typescript-eslint"
+  ],
+  "ignorePatterns": [],
+  "rules": {
+      "@typescript-eslint/no-unused-vars": [2, {"argsIgnorePattern": "^_"}],
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/strict-boolean-expressions": "off",
+      "@typescript-eslint/return-await": [2, "in-try-catch"], // FIXME: correct?
+      "max-len": [
+        "error",
+        {
+          "code": 120,
+          "comments": 120
+        }
+      ]
+  }
+}
