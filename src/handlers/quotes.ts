@@ -20,17 +20,19 @@ export class HandlerQuotes extends Handler {
     this.quoteDelay = quoteDelay ?? 10 * 1000
   }
 
-  public start (): void {
+  public start (): this {
     if (this.timeout) { this.stop() }
     this.timeout = setInterval(() => {
       this.sendQuote()
     }, this.quoteDelay)
+    return this
   }
 
-  public stop (): void {
+  public stop (): this {
     if (this.timeout) {
       clearInterval(this.timeout)
     }
+    return this
   }
 
   protected sendQuote (): void {

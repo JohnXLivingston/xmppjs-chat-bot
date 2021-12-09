@@ -87,6 +87,7 @@ export class Bot {
       room = new Room(this, roomJID)
       this.rooms.set(roomJIDstr, room)
     }
+    this.logger.debug('Joining room ' + roomJID.toString())
     await room.join(resource)
     return room
   }
