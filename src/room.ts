@@ -11,7 +11,7 @@ export class Room extends EventEmitter {
   protected state: 'offline' | 'online' = 'offline'
   protected userJID: JID | undefined
   protected readonly roster: Map<string, RoomUser> = new Map()
-  protected readonly logger: Logger
+  public readonly logger: Logger
 
   protected readonly handlers: Handler[] = []
 
