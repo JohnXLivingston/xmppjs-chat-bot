@@ -47,6 +47,7 @@ class HandlerHello extends Handler {
   }
 
   public stop (): this {
+    this.removeAllListeners()
     return this
   }
 }
