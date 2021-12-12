@@ -210,6 +210,7 @@ class Room extends EventEmitter {
 
   public attachHandler (handler: Handler): void {
     this.handlers.push(handler)
+    handler.start()
   }
 
   public detachHandlers (): void {

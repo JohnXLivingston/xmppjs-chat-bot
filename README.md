@@ -35,7 +35,7 @@ async function start (): Promise<void> {
       const room = await bot.joinRoom(roomId, 'room.localhost', 'DemoBot')
 
       // Then attach handlers. Each handlers provide some functionnalities.
-      // room.attachHandler(new BotHandlerDemo(room))
+      room.attachHandler(new BotHandlerDemo(room))
     }
   }).catch(err => { throw err })
 }
