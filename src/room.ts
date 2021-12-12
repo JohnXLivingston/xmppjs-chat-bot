@@ -1,6 +1,8 @@
+import type { Node } from '@xmpp/xml'
 import type { Bot } from './bot'
 import type { Logger } from './logger'
 import type { XMPPStanza } from './stanza'
+import type { Reference } from './reference'
 import type { Handler } from './handlers/abstract'
 import EventEmitter from 'events'
 import { JID } from '@xmpp/jid'
@@ -79,16 +81,23 @@ class Room extends EventEmitter {
     // FIXME: should wait for a presence stanza from the server.
   }
 
-  public async sendGroupchat (msg: string): Promise<void> {
+  public async sendGroupchat (msg: string, references?: Reference[]): Promise<void> {
     if (!this.userJID) { return }
     this.logger.debug(`Emitting a groupchat message for room ${this.roomJID.toString()}...`)
+    const children: Node[] = []
+    children.push(xml('body', {}, msg))
+    if (references) {
+      references.forEach(reference => {
+        children.push(reference.toXml())
+      })
+    }
     await this.bot.sendStanza(
       'message',
       {
         type: 'groupchat',
         to: this.roomJID.toString()
       },
-      xml('body', {}, msg)
+      ...children
     )
   }
 

@@ -1,5 +1,6 @@
 import type { Room, RoomMessage } from '../room'
 import { Handler } from './abstract'
+import { ReferenceMention } from '../reference'
 
 /**
  * HandlerRespond: respond when mentionned.
@@ -26,6 +27,7 @@ class HandlerRespond extends Handler {
       }
       const txt = this.message.replace(/{{NICK}}/g, message.from.nick)
       // TODO: highlight the user (see XMPP specification)
+      // const ref = new ReferenceMention(message.from.jid, 2, 6)
       this.room.sendGroupchat(txt).catch((err) => { this.logger.error(err) })
     })
   }

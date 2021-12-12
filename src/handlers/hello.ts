@@ -31,7 +31,7 @@ class HandlerHello extends Handler {
         return
       }
       if (this.delay !== undefined) {
-        const lastHello = this.lastHellos.get(user.JID.toString())
+        const lastHello = this.lastHellos.get(user.jid.toString())
         if (lastHello) {
           const now = new Date()
           if ((now.getTime() - lastHello.getTime()) < this.delay) {
