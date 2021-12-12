@@ -31,13 +31,13 @@ export class Bot {
     this.xmpp.on('stanza', (stanza: XMPPStanza) => {
       this.logger.debug('stanza received' + stanza.toString())
       if (!stanza.attrs.from) { return }
-      const jid = parse(stanza.attrs.from)
-      const roomJid = jid.bare() // removing the «resource» part of the jid.
+      const from = parse(stanza.attrs.from)
+      const roomJid = from.bare() // removing the «resource» part of the jid.
       const room = this.rooms.get(roomJid.toString())
       if (!room) {
         return
       }
-      room.emit('stanza', stanza, jid.getResource())
+      room.emit('stanza', stanza, from)
     })
 
     this.xmpp.on('online', (address) => {

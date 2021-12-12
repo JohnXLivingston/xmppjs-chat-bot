@@ -3,11 +3,22 @@ import type { Logger } from './logger'
 import type { XMPPStanza } from './stanza'
 import type { Handler } from './handlers/abstract'
 import EventEmitter from 'events'
-import { JID, parse as parseJID } from '@xmpp/jid'
+import { JID } from '@xmpp/jid'
 import xml from '@xmpp/xml'
 import { RoomUser } from './user'
 
-export class Room extends EventEmitter {
+declare interface Room {
+  on: (
+    ((event: 'reset', listener: () => void) => this) &
+    ((event: 'stanza', listener: (stanza: XMPPStanza, from: JID) => void) => this)
+  )
+  emit: (
+    ((event: 'reset') => boolean) &
+    ((event: 'stanza', stanza: XMPPStanza, from: JID) => boolean)
+  )
+}
+
+class Room extends EventEmitter {
   protected state: 'offline' | 'online' = 'offline'
   protected userJID: JID | undefined
   protected readonly roster: Map<string, RoomUser> = new Map()
@@ -26,7 +37,7 @@ export class Room extends EventEmitter {
       this.state = 'offline'
       this.roster.clear()
     })
-    this.on('stanza', (stanza: XMPPStanza, resource?: string) => {
+    this.on('stanza', (stanza: XMPPStanza, resource: JID) => {
       this.receiveStanza(stanza, resource)
     })
   }
@@ -81,17 +92,21 @@ export class Room extends EventEmitter {
     )
   }
 
-  public receiveStanza (stanza: XMPPStanza, fromResource?: string): void {
+  public receiveStanza (stanza: XMPPStanza, from: JID): void {
     if (stanza.name === 'presence') {
-      this.receivePresenceStanza(stanza, fromResource)
+      this.receivePresenceStanza(stanza, from)
     }
     if (stanza.name === 'message') {
-      this.receiveMessageStanza(stanza, fromResource)
+      this.receiveMessageStanza(stanza, from)
     }
   }
 
-  public receivePresenceStanza (stanza: XMPPStanza, fromResource?: string): void {
-    if (!fromResource) {
+  public receivePresenceStanza (stanza: XMPPStanza, from: JID): void {
+    if (!from) {
+      return
+    }
+    if (!from.getResource()) {
+      // This is not a room user.
       return
     }
 
@@ -106,7 +121,7 @@ export class Room extends EventEmitter {
     }
     const isMe = statusCodes.includes(110) // status 110 means that is concern the current user.
 
-    let user: RoomUser | undefined = this.roster.get(fromResource)
+    let user: RoomUser | undefined = this.roster.get(from.toString())
     const previousState = user?.state
     if (!isPresent) {
       if (!user) {
@@ -125,11 +140,11 @@ export class Room extends EventEmitter {
       if (!user) {
         user = new RoomUser(
           this,
-          parseJID(fromResource),
+          from,
           isMe
         )
         user.state = 'online'
-        this.roster.set(fromResource, user)
+        this.roster.set(from.toString(), user)
       } else {
         user.state = 'online'
       }
@@ -144,12 +159,12 @@ export class Room extends EventEmitter {
     }
   }
 
-  protected receiveMessageStanza (stanza: XMPPStanza, fromResource?: string): void {
+  protected receiveMessageStanza (stanza: XMPPStanza, from: JID): void {
     if (stanza.attrs.type !== 'groupchat') {
       return
     }
     // ignoring messages send by the bot himself
-    if (stanza.attrs.from === this.userJID?.toString()) {
+    if (this.userJID && from.equals(this.userJID)) {
       return
     }
     // ignoring history messages
@@ -182,8 +197,15 @@ export class Room extends EventEmitter {
       }
     }
 
-    const user = fromResource ? this.roster.get(fromResource) : undefined
-    this.emit('room_message', body.toString(), user, mentionned)
+    const user = this.roster.get(from.toString())
+    if (!user) {
+      this.logger.error(`Cant find user ${from.toString()} in room ${this.roomJID.toString()} roster.`)
+      return
+    }
+    const message = new RoomMessage(user, body.toString(), mentionned)
+    this.handlers.forEach((handler) => {
+      handler.emit('room_message', message)
+    })
   }
 
   public attachHandler (handler: Handler): void {
@@ -198,9 +220,15 @@ export class Room extends EventEmitter {
   }
 }
 
-export class RoomMessage {
+class RoomMessage {
   constructor (
     public readonly from: RoomUser,
-    public readonly message: string
+    public readonly message: string,
+    public readonly mentionned: boolean
   ) {}
+}
+
+export {
+  Room,
+  RoomMessage
 }
