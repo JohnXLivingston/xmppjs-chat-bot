@@ -117,7 +117,9 @@ export class Room extends EventEmitter {
         this.state = 'offline'
       }
       if (previousState === 'online') {
-        this.emit('room_part', user)
+        this.handlers.forEach((handler) => {
+          handler.emit('room_parted', user as RoomUser)
+        })
       }
     } else {
       if (!user) {
@@ -135,7 +137,9 @@ export class Room extends EventEmitter {
         this.state = 'online'
       }
       if (previousState !== 'online') {
-        this.emit('room_join', user)
+        this.handlers.forEach((handler) => {
+          handler.emit('room_joined', user as RoomUser)
+        })
       }
     }
   }
@@ -190,5 +194,13 @@ export class Room extends EventEmitter {
     for (const handler of this.handlers) {
       handler.stop()
     }
+    this.handlers.length = 0
   }
+}
+
+export class RoomMessage {
+  constructor (
+    public readonly from: RoomUser,
+    public readonly message: string
+  ) {}
 }
