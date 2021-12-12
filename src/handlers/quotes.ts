@@ -12,19 +12,17 @@ abstract class HandlerQuotesBase extends Handler {
     super(room)
   }
 
-  public start (): this {
+  public start (): void {
     if (this.timeout) { this.stop() }
     this.timeout = setInterval(() => {
       this.sendQuote()
     }, this.quoteDelay)
-    return this
   }
 
-  public stop (): this {
+  public stop (): void {
     if (this.timeout) {
       clearInterval(this.timeout)
     }
-    return this
   }
 
   protected sendQuote (): void {

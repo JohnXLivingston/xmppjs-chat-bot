@@ -11,7 +11,7 @@ It is meant to be as modular as possible.
 Here is an example writtin in typescript.
 
 ```typescript
-import { ConsoleLogger, Bot } from 'xmppjs-chat-bot'
+import { ConsoleLogger, Bot, HandlerHello } from 'xmppjs-chat-bot'
 import { component } from '@xmpp/component'
 
 const logger = new ConsoleLogger()
@@ -34,8 +34,10 @@ async function start (): Promise<void> {
     for (const roomId of ['6432f147-83c7-4fa3-b3b5-e49c2590e825']) {
       const room = await bot.joinRoom(roomId, 'room.localhost', 'DemoBot')
 
-      // Then attach handlers. Each handlers provide some functionnalities.
-      room.attachHandler(new BotHandlerDemo(room))
+      // Create some handlers. Each handler provide some functionnalities.
+      const handlerHello = new HandlerHello(room)
+      // Then start the handlers.
+      handlerHello.start()
     }
   }).catch(err => { throw err })
 }

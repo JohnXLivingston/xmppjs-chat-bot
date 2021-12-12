@@ -59,7 +59,7 @@ export class Bot {
   public async disconnect (): Promise<any> {
     for (const [roomId, room] of this.rooms) {
       this.logger.debug(`Leaving room ${roomId}...`)
-      await room.detachHandlers()
+      await room.stopHandlers()
       await room.part()
     }
     await this.xmpp.stop()

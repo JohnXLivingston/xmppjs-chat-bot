@@ -24,8 +24,9 @@ export abstract class Handler extends EventEmitter {
   ) {
     super()
     this.logger = room.logger
+    this.room.attachHandler(this)
   }
 
-  public abstract start (): this
-  public abstract stop (): this
+  public abstract start (): void
+  public abstract stop (): void
 }

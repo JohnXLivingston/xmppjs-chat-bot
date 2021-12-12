@@ -21,7 +21,7 @@ class HandlerHello extends Handler {
     super(room)
   }
 
-  public start (): this {
+  public start (): void {
     this.on('room_joined', (user: RoomUser) => {
       if (user.isMe) {
         return
@@ -43,12 +43,10 @@ class HandlerHello extends Handler {
       // TODO: highlight the user (see XMPP specification)
       this.room.sendGroupchat(message).catch((err) => { this.logger.error(err) })
     })
-    return this
   }
 
-  public stop (): this {
+  public stop (): void {
     this.removeAllListeners()
-    return this
   }
 }
 
