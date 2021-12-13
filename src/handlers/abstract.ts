@@ -1,6 +1,6 @@
 import type { Room, RoomMessage } from '../room'
 import type { RoomUser } from '../user'
-import type { Logger } from '../logger'
+import { Logger, wrapLogger } from '../logger'
 import { EventEmitter } from 'events'
 
 export declare interface Handler {
@@ -23,7 +23,7 @@ export abstract class Handler extends EventEmitter {
     protected readonly room: Room
   ) {
     super()
-    this.logger = room.logger
+    this.logger = wrapLogger(this.constructor.name, room.logger)
     this.room.attachHandler(this)
   }
 

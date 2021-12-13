@@ -1,6 +1,6 @@
 import type { Node } from '@xmpp/xml'
 import type { Bot } from './bot'
-import type { Logger } from './logger'
+import { Logger, wrapLogger } from './logger'
 import type { XMPPStanza } from './stanza'
 import type { Reference } from './reference'
 import type { Handler } from './handlers/abstract'
@@ -33,7 +33,7 @@ class Room extends EventEmitter {
     protected readonly roomJID: JID
   ) {
     super()
-    this.logger = bot.logger
+    this.logger = wrapLogger(this.roomJID.toString(), bot.logger)
 
     this.on('reset', () => {
       this.state = 'offline'

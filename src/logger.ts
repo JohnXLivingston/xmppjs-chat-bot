@@ -35,8 +35,18 @@ class ConsoleLogger implements Logger {
   }
 }
 
+function wrapLogger (name: string, logger: Logger): Logger {
+  return {
+    debug: (s) => logger.debug(`[${name}] ` + s),
+    info: (s) => logger.info(`[${name}] ` + s),
+    warn: (s) => logger.warn(`[${name}] ` + s),
+    error: (s) => logger.error(`[${name}] ` + s)
+  }
+}
+
 export {
   Logger,
   DefaultLogger,
-  ConsoleLogger
+  ConsoleLogger,
+  wrapLogger
 }

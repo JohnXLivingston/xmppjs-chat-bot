@@ -3,7 +3,7 @@ import type { XMPPStanza, XMPPStanzaType } from './stanza'
 import Connection from '@xmpp/connection'
 import { parse, JID } from '@xmpp/jid'
 import xml from '@xmpp/xml'
-import { DefaultLogger, Logger } from './logger'
+import { DefaultLogger, Logger, wrapLogger } from './logger'
 import { Room } from './room'
 
 export class Bot {
@@ -16,7 +16,7 @@ export class Bot {
     protected readonly xmpp: Connection,
     logger?: Logger
   ) {
-    this.logger = logger ?? new DefaultLogger()
+    this.logger = wrapLogger(botName, logger ?? new DefaultLogger())
   }
 
   public async connect (): Promise<void> {
