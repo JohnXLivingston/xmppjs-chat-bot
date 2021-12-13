@@ -31,6 +31,42 @@ class ReferenceMention extends Reference {
       }
     )
   }
+
+  public static mention (
+    txt: string,
+    jid: JID,
+    placeholder: string = '{{NICK}}'
+  ): { txt: string, references: ReferenceMention[]} {
+    const references: ReferenceMention[] = []
+    const nick = jid.getResource()
+
+    if (!placeholder.length) {
+      // hum... thats dangerous...
+      return {
+        txt,
+        references
+      }
+    }
+
+    const parts: string[] = txt.split(placeholder)
+    txt = ''
+    while (parts.length) {
+      txt += parts.shift() ?? ''
+
+      // as long as we are not on the last part...
+      if (parts.length > 0) {
+        const begin = txt.length
+        const end = begin + nick.length
+        txt += nick
+        references.push(new ReferenceMention(jid, begin, end))
+      }
+    }
+
+    return {
+      txt,
+      references
+    }
+  }
 }
 
 export {

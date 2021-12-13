@@ -8,11 +8,11 @@ import { ReferenceMention } from '../reference'
 class HandlerRespond extends Handler {
   /**
    * @param room
-   * @param message the message to respond when mentionned. Use the {{NICK}} placeholder to insert the user nick name.
+   * @param txt the message to respond when mentionned. Use the {{NICK}} placeholder to insert the user nick name.
    */
   constructor (
     room: Room,
-    protected readonly message: string = 'Yes {{NICK}}?'
+    protected readonly txt: string = 'Yes {{NICK}}?'
   ) {
     super(room)
   }
@@ -25,10 +25,9 @@ class HandlerRespond extends Handler {
       if (!message.mentionned) {
         return
       }
-      const txt = this.message.replace(/{{NICK}}/g, message.from.nick)
       // TODO: highlight the user (see XMPP specification)
-      // const ref = new ReferenceMention(message.from.jid, 2, 6)
-      this.room.sendGroupchat(txt).catch((err) => { this.logger.error(err) })
+      const mention = ReferenceMention.mention(this.txt, message.from.jid, '{{NICK}}')
+      this.room.sendGroupchat(mention.txt, mention.references).catch((err) => { this.logger.error(err) })
     })
   }
 
