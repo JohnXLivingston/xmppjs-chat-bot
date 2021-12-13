@@ -6,6 +6,17 @@ It is meant to be as modular as possible.
 
 **Note:** it is still in alpha version. More to come...
 
+## Cli
+
+You can run the bot using the CLI:
+
+```bash
+npx . run -f path/to/a/config/file.json
+```
+
+There is no documentation for this file format yet.
+But you can refer to [this file](./src/config/read.ts)
+
 ## Quickart
 
 Here is an example written in typescript.
