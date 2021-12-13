@@ -56,6 +56,10 @@ class Room extends EventEmitter {
     return count
   }
 
+  public get myNick (): string | undefined {
+    return this.userJID?.getResource()
+  }
+
   public get jid (): JID {
     return this.roomJID
   }
@@ -233,7 +237,7 @@ class Room extends EventEmitter {
       this.logger.error(`Cant find user ${from.toString()} in room ${this.roomJID.toString()} roster.`)
       return
     }
-    const message = new RoomMessage(user, body.toString(), mentionned)
+    const message = new RoomMessage(this, user, body.toString(), mentionned)
     this.handlers.forEach((handler) => {
       handler.emit('room_message', message)
     })
@@ -252,10 +256,16 @@ class Room extends EventEmitter {
 
 class RoomMessage {
   constructor (
+    protected readonly room: Room,
     public readonly from: RoomUser,
-    public readonly message: string,
+    public readonly txt: string,
     public readonly mentionned: boolean
   ) {}
+
+  public get containsMyNick (): boolean {
+    const myNick = this.room.myNick
+    return !!(myNick && myNick.length > 0 && this.txt.includes(myNick))
+  }
 }
 
 export {

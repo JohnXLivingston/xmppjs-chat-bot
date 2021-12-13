@@ -1,6 +1,7 @@
 import type { Room } from '../room'
 import type { RoomUser } from '../user'
 import { Handler } from './abstract'
+import { ReferenceMention } from '../reference'
 
 /**
  * HandlerHello: says hello to incoming users.
@@ -10,12 +11,12 @@ class HandlerHello extends Handler {
 
   /**
    * @param room the room to handle
-   * @param message optionnal message to say. Use {{NICK}} as a placeholder for the user's nick
+   * @param txt optionnal message to say. Use {{NICK}} as a placeholder for the user's nick
    * @param delay if not undefined, do not repeat hello message if the user was already welcomed this past delay seconds
    */
   constructor (
     room: Room,
-    protected readonly message: string = 'Hello {{NICK}}!',
+    protected readonly txt: string = 'Hello {{NICK}}!',
     protected readonly delay: number | undefined = undefined
   ) {
     super(room)
@@ -39,9 +40,8 @@ class HandlerHello extends Handler {
           }
         }
       }
-      const message = this.message.replace(/{{NICK}}/g, user.nick)
-      // TODO: highlight the user (see XMPP specification)
-      this.room.sendGroupchat(message).catch((err) => { this.logger.error(err) })
+      const mention = ReferenceMention.mention(this.txt, user.jid, '{{NICK}}')
+      this.room.sendGroupchat(mention.txt, mention.references).catch((err) => { this.logger.error(err) })
     })
   }
 

@@ -19,13 +19,19 @@ class HandlerRespond extends Handler {
 
   public start (): void {
     this.on('room_message', (message: RoomMessage) => {
+      if (!this.room.isOnline()) {
+        return
+      }
       if (message.from.isMe) {
         return
       }
-      if (!message.mentionned) {
+      if (message.mentionned) {
+        this.logger.debug('[HandlerRespond] Im mentionned in the message, using XMPP references')
+      } else if (message.containsMyNick) {
+        this.logger.debug('[HandlerRespond] My nickname appears in the message text')
+      } else {
         return
       }
-      // TODO: highlight the user (see XMPP specification)
       const mention = ReferenceMention.mention(this.txt, message.from.jid, '{{NICK}}')
       this.room.sendGroupchat(mention.txt, mention.references).catch((err) => { this.logger.error(err) })
     })
