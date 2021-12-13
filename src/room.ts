@@ -56,6 +56,10 @@ class Room extends EventEmitter {
     return count
   }
 
+  public get jid (): JID {
+    return this.roomJID
+  }
+
   public async join (nick: string): Promise<void> {
     this.userJID = new JID(this.roomJID.getLocal(), this.roomJID.getDomain(), nick)
     this.logger.debug(`Emitting a presence for room ${this.roomJID.toString()}...`)

@@ -29,7 +29,7 @@ export class Bot {
     })
 
     this.xmpp.on('stanza', (stanza: XMPPStanza) => {
-      this.logger.debug('stanza received' + stanza.toString())
+      this.logger.debug('stanza received: ' + stanza.toString())
       if (!stanza.attrs.from) { return }
       const from = parse(stanza.attrs.from)
       const roomJid = from.bare() // removing the «resource» part of the jid.

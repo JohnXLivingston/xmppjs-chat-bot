@@ -27,17 +27,20 @@ abstract class HandlerQuotesBase extends Handler {
 
   protected sendQuote (): void {
     const room = this.room
-    if (!room.isOnline()) { return }
+    if (!room.isOnline()) {
+      this.logger.debug('[HandlerQuote] The room ' + this.room.jid.toString() + ' is not online, skipping.')
+      return
+    }
     // checking if there is someone to listen...
     const onlineUserCount = this.room.onlineUserCount()
-    this.logger.debug(`Online user count in room: ${onlineUserCount}`)
+    this.logger.debug(`[HandlerQuote] Online user count in room: ${onlineUserCount}`)
     if (onlineUserCount < 2) { return }
-    const message = this.getMessage()
-    if (!message) { return }
-    this.room.sendGroupchat(message).catch((err) => { this.logger.error(err) })
+    const txt = this.getQuoteTxt()
+    if (!txt) { return }
+    this.room.sendGroupchat(txt).catch((err) => { this.logger.error(err) })
   }
 
-  protected abstract getMessage (): string | null
+  protected abstract getQuoteTxt (): string | null
 }
 
 /**
@@ -46,7 +49,7 @@ abstract class HandlerQuotesBase extends Handler {
 class HandlerQuotes extends HandlerQuotesBase {
   protected count: number = 0
 
-  protected getMessage (): string {
+  protected getQuoteTxt (): string {
     this.logger.info(`Emitting the message number ${this.count}.`)
     return this.quotes[(this.count++) % this.quotes.length]
   }
@@ -56,7 +59,7 @@ class HandlerQuotes extends HandlerQuotesBase {
  * HandlerRandomQuotes: emit quotes by randomly selecting them
  */
 class HandlerRandomQuotes extends HandlerQuotesBase {
-  protected getMessage (): string | null {
+  protected getQuoteTxt (): string | null {
     const count = Math.floor(Math.random() * (this.quotes.length - 1))
     if (count >= this.quotes.length) { return null }
     this.logger.info(`Emitting the random message number ${count}.`)
