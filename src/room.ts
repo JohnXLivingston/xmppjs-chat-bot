@@ -125,6 +125,11 @@ class Room extends EventEmitter {
       return
     }
 
+    if (stanza.attrs.type === 'error') {
+      this.logger.error('[Room:receivePresenceStanza] Received error stanza. Dont deal with errors yet, discard')
+      return
+    }
+
     const isPresent = stanza.attrs.type !== 'unavailable'
 
     let isMe: boolean = false
