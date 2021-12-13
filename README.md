@@ -8,7 +8,7 @@ It is meant to be as modular as possible.
 
 ## Quickart
 
-Here is an example writtin in typescript.
+Here is an example written in typescript.
 
 ```typescript
 import { ConsoleLogger, Bot, HandlerHello } from 'xmppjs-chat-bot'
