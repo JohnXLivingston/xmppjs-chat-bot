@@ -39,7 +39,10 @@ async function start (): Promise<void> {
       // Then start the handlers.
       handlerHello.start()
     }
-  }).catch(err => { throw err })
+  }, (err) => {
+    logger.error(err)
+    process.exit(1)
+  })
 }
 
 async function shutdown (): Promise<void> {
