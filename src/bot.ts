@@ -41,7 +41,7 @@ export class Bot {
     })
 
     this.xmpp.on('online', (address) => {
-      this.logger.debug('Online with address' + address.toString())
+      this.logger.debug('Online with address ' + address.toString())
 
       this.address = address
 
