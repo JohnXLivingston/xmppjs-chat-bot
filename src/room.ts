@@ -1,24 +1,13 @@
 import type { Node } from '@xmpp/xml'
 import type { Bot } from './bot'
 import { Logger, wrapLogger } from './logger'
-import type { XMPPStanza } from './stanza'
+import type { Stanza, MessageStanza, PresenceStanza } from './stanza'
 import type { Reference } from './reference'
 import type { Handler } from './handlers/abstract'
 import EventEmitter from 'events'
 import { JID } from '@xmpp/jid'
 import xml from '@xmpp/xml'
 import { RoomUser } from './user'
-
-declare interface Room {
-  on: (
-    ((event: 'reset', listener: () => void) => this) &
-    ((event: 'stanza', listener: (stanza: XMPPStanza, from: JID) => void) => this)
-  )
-  emit: (
-    ((event: 'reset') => boolean) &
-    ((event: 'stanza', stanza: XMPPStanza, from: JID) => boolean)
-  )
-}
 
 class Room extends EventEmitter {
   protected state: 'offline' | 'online' = 'offline'
@@ -34,16 +23,20 @@ class Room extends EventEmitter {
   ) {
     super()
     this.logger = wrapLogger(this.roomJID.toString(), bot.logger)
-
-    this.on('reset', () => {
-      this.state = 'offline'
-      this.roster.clear()
-    })
-    this.on('stanza', (stanza: XMPPStanza, resource: JID) => {
-      this.receiveStanza(stanza, resource)
-    })
   }
 
+  /**
+   * Resets the room states (empties the roster, mark offline).
+   */
+  public reset (): void {
+    this.state = 'offline'
+    this.roster.clear()
+  }
+
+  /**
+   * Indicate if we are in the room
+   * @returns is online
+   */
   public isOnline (): boolean {
     return this.state === 'online'
   }
@@ -109,16 +102,17 @@ class Room extends EventEmitter {
     )
   }
 
-  public receiveStanza (stanza: XMPPStanza, from: JID): void {
-    if (stanza.name === 'presence') {
-      this.receivePresenceStanza(stanza, from)
+  public receiveStanza (stanza: Stanza): void {
+    if (stanza.stanzaType === 'presence') {
+      this.receivePresenceStanza(stanza as PresenceStanza)
     }
-    if (stanza.name === 'message') {
-      this.receiveMessageStanza(stanza, from)
+    if (stanza.stanzaType === 'message') {
+      this.receiveMessageStanza(stanza as MessageStanza)
     }
   }
 
-  public receivePresenceStanza (stanza: XMPPStanza, from: JID): void {
+  public receivePresenceStanza (stanza: PresenceStanza): void {
+    const from = stanza.from
     if (!from) {
       this.logger.debug('[Room:receivePresenceStanza] no from, discard.')
       return
@@ -129,23 +123,14 @@ class Room extends EventEmitter {
       return
     }
 
-    if (stanza.attrs.type === 'error') {
+    if (stanza.type === 'error') {
       this.logger.error('[Room:receivePresenceStanza] Received error stanza. Dont deal with errors yet, discard')
       return
     }
 
-    const isPresent = stanza.attrs.type !== 'unavailable'
+    const isPresent = stanza.type !== 'unavailable'
 
-    let isMe: boolean = false
-    const xElems = stanza.getChildren('x')
-    for (const x of xElems) {
-      const statusElems = x.getChildren('status')
-      for (const status of statusElems) {
-        if (status.attrs.code === '110') {
-          isMe = true
-        }
-      }
-    }
+    const isMe: boolean = stanza.isMe()
 
     let user: RoomUser | undefined = this.roster.get(from.toString())
     const previousState = user?.state
@@ -194,8 +179,11 @@ class Room extends EventEmitter {
     }
   }
 
-  protected receiveMessageStanza (stanza: XMPPStanza, from: JID): void {
-    if (stanza.attrs.type !== 'groupchat') {
+  protected receiveMessageStanza (stanza: MessageStanza): void {
+    const from = stanza.from
+    if (!from) { return }
+
+    if (stanza.type !== 'groupchat') {
       return
     }
     // ignoring messages send by the bot himself
@@ -203,33 +191,23 @@ class Room extends EventEmitter {
       return
     }
     // ignoring history messages
-    if (stanza.getChild('delay')) {
+    if (stanza.isDelayed()) {
       return
     }
-    const body = stanza.getChild('body')
+    const body = stanza.body()
     // ignoring message without body (subject, ...)
     if (!body) {
       return
     }
 
     let mentionned: boolean = false // I'm I mentionned?
-    // TODO: fix this ugly code.
     if (this.userJID) {
-      const references = stanza.getChildren('reference')
-      for (const reference of references) {
-        if (reference.attrs.type === 'mention') {
-          if (reference.attrs.uri === 'xmpp:' + this.userJID.toString()) {
-            mentionned = true
-          } else {
-            const addr = this.bot.getAddress()
-            if (addr) {
-              if (reference.attrs.uri === 'xmpp:' + addr.toString()) {
-                mentionned = true
-              }
-            }
-          }
-        }
+      const searchJIDs = [this.userJID]
+      const addr = this.bot.getAddress()
+      if (addr) {
+        searchJIDs.push(addr)
       }
+      mentionned = stanza.isMentionned(searchJIDs)
     }
 
     const user = this.roster.get(from.toString())

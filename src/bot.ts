@@ -1,7 +1,8 @@
-import type { Node } from '@xmpp/xml'
-import type { XMPPStanza, XMPPStanzaType } from './stanza'
+import type { Node, Element } from '@xmpp/xml'
+import type { XMPPElementType } from './stanza'
+import { Stanza } from './stanza'
 import Connection from '@xmpp/connection'
-import { parse, JID } from '@xmpp/jid'
+import { JID } from '@xmpp/jid'
 import xml from '@xmpp/xml'
 import { DefaultLogger, Logger, wrapLogger } from './logger'
 import { Room } from './room'
@@ -28,16 +29,17 @@ export class Bot {
       this.logger.info(`${this.botName} is now offline.`)
     })
 
-    this.xmpp.on('stanza', (stanza: XMPPStanza) => {
-      this.logger.debug('stanza received: ' + stanza.toString())
-      if (!stanza.attrs.from) { return }
-      const from = parse(stanza.attrs.from)
-      const roomJid = from.bare() // removing the «resource» part of the jid.
-      const room = this.rooms.get(roomJid.toString())
-      if (!room) {
+    this.xmpp.on('stanza', (xmppElement: Element) => {
+      const stanza = Stanza.parseIncoming(xmppElement)
+      if (!stanza) {
+        this.logger.error('Failed to initiate a Stanza object from: ' + xmppElement.toString())
         return
       }
-      room.emit('stanza', stanza, from)
+      this.logger.debug('stanza received: ' + stanza.toString())
+      if (!stanza.from) { return }
+      const roomJid = stanza.from.bare() // removing the «resource» part of the jid.
+      const room = this.rooms.get(roomJid.toString())
+      room?.receiveStanza(stanza)
     })
 
     this.xmpp.on('online', (address) => {
@@ -46,7 +48,7 @@ export class Bot {
       this.address = address
 
       // 'online' is emitted at reconnection, so we must reset rooms rosters
-      this.rooms.forEach(room => room.emit('reset'))
+      this.rooms.forEach(room => room.reset())
     })
 
     this.xmpp.on('offline', () => {
@@ -66,7 +68,7 @@ export class Bot {
   }
 
   public async sendStanza (
-    type: XMPPStanzaType,
+    type: XMPPElementType,
     attrs: object,
     ...children: Node[]
   ): Promise<void> {
