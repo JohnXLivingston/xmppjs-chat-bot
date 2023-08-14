@@ -52,14 +52,19 @@ class HandlerModerate extends Handler {
       }
     }
 
-    this.roomMessage = (stanza: MessageStanza, _fromUser: RoomUser): void => {
+    this.roomMessage = (stanza: MessageStanza, fromUser: RoomUser): void => {
       const body = stanza.body()?.toString() ?? ''
       if (!body.length) { return }
+
       for (const rule of this.rules) {
         const patterns = Array.isArray(rule.pattern) ? rule.pattern : [rule.pattern]
         for (const pattern of patterns) {
           if (pattern.test(body)) {
             this.logger.debug('Message match following rule: ' + rule.name)
+            if (fromUser.isModerator()) {
+              this.logger.debug('Ignoring the moderation rule ' + rule.name + ', because the user is moderator.')
+              continue
+            }
             this.room.moderateMessage(stanza, rule.reason).catch((err) => { this.logger.error(err) })
             return
           }

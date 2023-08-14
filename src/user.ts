@@ -9,6 +9,8 @@ export class RoomUser {
   protected currentState: RoomUserState = 'offline'
   public readonly jid: JID
   protected readonly userIsMe: boolean
+  protected role: string
+  protected affiliation: string
 
   constructor (
     room: Room,
@@ -20,6 +22,8 @@ export class RoomUser {
     }
     this.jid = presence.from
     this.userIsMe = presence.isMe()
+    this.role = 'none'
+    this.affiliation = 'none'
     this.update(presence)
   }
 
@@ -38,6 +42,9 @@ export class RoomUser {
     const isPresent = presence.type !== 'unavailable'
     const previousState = this.currentState
     this.currentState = isPresent ? 'online' : 'offline'
+    this.role = presence.role() ?? this.role
+    this.affiliation = presence.affiliation() ?? this.affiliation
+
     return this.currentState !== previousState
   }
 
@@ -53,7 +60,19 @@ export class RoomUser {
     return this.currentState === 'online'
   }
 
+  /**
+   * Indicate if the user is the bot himself.
+   * @returns true if the user is the bot itself
+   */
   public isMe (): boolean {
     return this.userIsMe
+  }
+
+  /**
+   * Indicate if the current user role gives him moderation rights.
+   * @returns true if the user is a moderator
+   */
+  public isModerator (): boolean {
+    return this.role === 'moderator'
   }
 }

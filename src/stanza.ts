@@ -95,21 +95,55 @@ class IqStanza extends Stanza {
 
 class PresenceStanza extends Stanza {
   readonly stanzaType: XMPPElementType = 'presence'
+  private readonly _isMe: boolean
+  private readonly _Role: string | undefined
+  private readonly _Affiliation: string | undefined
 
-  /**
-   * returns true if this presence stanza if for the current user.
-   */
-  public isMe (): boolean {
+  constructor (xml: Element) {
+    super(xml)
+
     const xElems = this.xml.getChildren('x')
     for (const x of xElems) {
       const statusElems = x.getChildren('status')
       for (const status of statusElems) {
         if (status.attrs.code === '110') {
-          return true
+          this._isMe = true
+        }
+      }
+      const itemsElems = x.getChildren('item')
+      for (const item of itemsElems) {
+        if (item.attrs.role) {
+          this._Role = item.attrs.role
+        }
+        if (item.attrs.affiliation) {
+          this._Affiliation = item.attrs.affiliation
         }
       }
     }
-    return false
+    this._isMe ??= false
+  }
+
+  /**
+   * returns true if this presence stanza if for the current user.
+   */
+  public isMe (): boolean {
+    return this._isMe
+  }
+
+  /**
+   * If a role is in the stanza, returns it.
+   * @returns the role or undefined
+   */
+  public role (): string | undefined {
+    return this._Role
+  }
+
+  /**
+   * If an affiliation is in the stanza, returns it.
+   * @returns the affilation or undefined
+   */
+  public affiliation (): string | undefined {
+    return this._Affiliation
   }
 }
 
