@@ -117,6 +117,53 @@ class Room extends EventEmitter {
     )
   }
 
+  /**
+   * Moderate a message by sending the corresponding stanza.
+   * See https://xmpp.org/extensions/xep-0425.html.
+   * @param stanza The message to moderate
+   * @param reason The optionnal reason for the moderation
+   * @returns void
+   */
+  public async moderateMessage (stanza: MessageStanza, reason?: string): Promise<void> {
+    const messageId = stanza.uniqueAndStableStanzaID()
+    if (!messageId) {
+      this.logger.error('Can\'t emit a retract for a message without uniqueAndStableStanzaID.')
+      return
+    }
+    this.logger.debug(`Emitting a retract for room ${this.roomJID.toString()} and message ${messageId}...`)
+
+    const moderateChildren: Node[] = [
+      xml('retract', {
+        xmlns: 'urn:xmpp:message-retract:0'
+      })
+    ]
+    if (reason) {
+      moderateChildren.push(xml('reason', {}, reason))
+    }
+
+    const applyTo = xml(
+      'apply-to', {
+        xmlns: 'urn:xmpp:fasten:0',
+        id: messageId
+      },
+      xml(
+        'moderate',
+        {
+          xmlns: 'urn:xmpp:message-moderate:0'
+        },
+        ...moderateChildren
+      )
+    )
+    await this.bot.sendStanza(
+      'iq',
+      {
+        type: 'set',
+        to: this.roomJID.toString()
+      },
+      applyTo
+    )
+  }
+
   public receiveStanza (stanza: Stanza): void {
     if (stanza.stanzaType === 'presence') {
       this.receivePresenceStanza(stanza as PresenceStanza)

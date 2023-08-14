@@ -53,6 +53,15 @@ class MessageStanza extends Stanza {
   }
 
   /**
+   * Returns the message stanza-id, as defined by the MUC component.
+   * See https://xmpp.org/extensions/xep-0359.html.
+   * @returns The message id if present, null otherwise
+   */
+  public uniqueAndStableStanzaID (): string | null {
+    return this.xml.getChild('stanza-id')?.attrs.id ?? null
+  }
+
+  /**
    * return the message body as a string.
    */
   public body (): string | null {
