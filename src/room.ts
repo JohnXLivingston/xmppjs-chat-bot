@@ -9,6 +9,21 @@ import { JID } from '@xmpp/jid'
 import xml from '@xmpp/xml'
 import { RoomUser } from './user'
 
+declare interface Room {
+  on: (
+    ((event: 'room_joined', listener: (user: RoomUser) => void) => this) &
+    ((event: 'room_parted', listener: (user: RoomUser) => void) => this) &
+    ((event: 'room_message', listener: (stanza: MessageStanza, fromUser: RoomUser) => void) => this) &
+    ((event: 'room_mentionned', listener: (stanza: MessageStanza, fromUser: RoomUser) => void) => this)
+  )
+  emit: (
+    ((event: 'room_joined', user: RoomUser) => boolean) &
+    ((event: 'room_parted', user: RoomUser) => boolean) &
+    ((event: 'room_message', stanza: MessageStanza, fromUser: RoomUser) => boolean) &
+    ((event: 'room_mentionned', stanza: MessageStanza, fromUser: RoomUser) => boolean)
+  )
+}
+
 class Room extends EventEmitter {
   protected state: 'offline' | 'online' = 'offline'
   protected userJID: JID | undefined
@@ -146,10 +161,11 @@ class Room extends EventEmitter {
         this.state = 'offline'
       }
       if (previousState === 'online') {
-        this.logger.debug('[Room:receivePresenceStanza] user was previously online, emitting room_parted event')
-        this.handlers.forEach((handler) => {
-          handler.emit('room_parted', user as RoomUser)
-        })
+        if (this.isOnline()) {
+          // must skip if !isOnline, to ignore initials presence messages
+          this.logger.debug('[Room:receivePresenceStanza] user was previously online, emitting room_parted event')
+          this.emit('room_parted', user)
+        }
       }
     } else {
       this.logger.debug('[Room:receivePresenceStanza] presence=yes')
@@ -171,10 +187,11 @@ class Room extends EventEmitter {
         this.state = 'online'
       }
       if (previousState !== 'online') {
-        this.logger.debug('[Room:receivePresenceStanza] user was previously not online, emitting room_joined event')
-        this.handlers.forEach((handler) => {
-          handler.emit('room_joined', user as RoomUser)
-        })
+        if (this.isOnline()) {
+          // must skip if !isOnline, to ignore initials presence messages
+          this.logger.debug('[Room:receivePresenceStanza] user was previously not online, emitting room_joined event')
+          this.emit('room_joined', user)
+        }
       }
     }
   }
@@ -182,6 +199,11 @@ class Room extends EventEmitter {
   protected receiveMessageStanza (stanza: MessageStanza): void {
     const from = stanza.from
     if (!from) { return }
+
+    if (!this.isOnline()) {
+      // We are no more in the room, don't trigger anything.
+      return
+    }
 
     if (stanza.type !== 'groupchat') {
       return
@@ -200,25 +222,25 @@ class Room extends EventEmitter {
       return
     }
 
-    let mentionned: boolean = false // I'm I mentionned?
+    const user = this.roster.get(from.toString())
+    if (!user) {
+      this.logger.error(`Cant find user ${from.toString()} in room ${this.roomJID.toString()} roster.`)
+      return
+    }
+    this.emit('room_message', stanza, user)
+
+    // I'm I mentionned?
     if (this.userJID) {
       const searchJIDs = [this.userJID]
       const addr = this.bot.getAddress()
       if (addr) {
         searchJIDs.push(addr)
       }
-      mentionned = stanza.isMentionned(searchJIDs)
+      if (stanza.isMentionned(searchJIDs)) {
+        this.logger.debug('[HandlerRespond] Im mentionned in the message, using XMPP references')
+        this.emit('room_mentionned', stanza, user)
+      }
     }
-
-    const user = this.roster.get(from.toString())
-    if (!user) {
-      this.logger.error(`Cant find user ${from.toString()} in room ${this.roomJID.toString()} roster.`)
-      return
-    }
-    const message = new RoomMessage(this, user, body.toString(), mentionned)
-    this.handlers.forEach((handler) => {
-      handler.emit('room_message', message)
-    })
   }
 
   public attachHandler (handler: Handler): void {
@@ -232,21 +254,7 @@ class Room extends EventEmitter {
   }
 }
 
-class RoomMessage {
-  constructor (
-    protected readonly room: Room,
-    public readonly from: RoomUser,
-    public readonly txt: string,
-    public readonly mentionned: boolean
-  ) {}
-
-  public get containsMyNick (): boolean {
-    const myNick = this.room.myNick
-    return !!(myNick && myNick.length > 0 && this.txt.includes(myNick))
-  }
-}
-
 export {
   Room,
-  RoomMessage
+  RoomUser
 }

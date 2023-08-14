@@ -8,6 +8,7 @@ import { ReferenceMention } from '../reference'
  */
 class HandlerHello extends Handler {
   protected readonly lastHellos: Map<string, Date> = new Map()
+  private readonly roomJoined
 
   /**
    * @param room the room to handle
@@ -20,15 +21,9 @@ class HandlerHello extends Handler {
     protected readonly delay: number | undefined = undefined
   ) {
     super(room)
-  }
 
-  public start (): void {
-    this.on('room_joined', (user: RoomUser) => {
+    this.roomJoined = (user: RoomUser): void => {
       if (user.isMe) {
-        return
-      }
-      if (!this.room.isOnline()) {
-        // must skip if !isOnline, to ignore initials presence messages
         return
       }
       if (this.delay !== undefined) {
@@ -42,11 +37,15 @@ class HandlerHello extends Handler {
       }
       const mention = ReferenceMention.mention(this.txt, user.jid, '{{NICK}}')
       this.room.sendGroupchat(mention.txt, mention.references).catch((err) => { this.logger.error(err) })
-    })
+    }
+  }
+
+  public start (): void {
+    this.room.on('room_joined', this.roomJoined)
   }
 
   public stop (): void {
-    this.removeAllListeners()
+    this.room.off('room_joined', this.roomJoined)
   }
 }
 

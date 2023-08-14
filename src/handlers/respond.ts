@@ -1,4 +1,5 @@
-import type { Room, RoomMessage } from '../room'
+import type { Room, RoomUser } from '../room'
+import type { MessageStanza } from '../stanza'
 import { Handler } from './abstract'
 import { ReferenceMention } from '../reference'
 
@@ -6,6 +7,8 @@ import { ReferenceMention } from '../reference'
  * HandlerRespond: respond when mentionned.
  */
 class HandlerRespond extends Handler {
+  private readonly roomMentionned
+
   /**
    * @param room
    * @param txt the message to respond when mentionned. Use the {{NICK}} placeholder to insert the user nick name.
@@ -15,30 +18,22 @@ class HandlerRespond extends Handler {
     protected readonly txt: string = 'Yes {{NICK}}?'
   ) {
     super(room)
+
+    this.roomMentionned = (stanza: MessageStanza, fromUser: RoomUser): void => {
+      if (!stanza.from) {
+        return
+      }
+      const mention = ReferenceMention.mention(this.txt, fromUser.jid, '{{NICK}}')
+      this.room.sendGroupchat(mention.txt, mention.references).catch((err) => { this.logger.error(err) })
+    }
   }
 
   public start (): void {
-    this.on('room_message', (message: RoomMessage) => {
-      if (!this.room.isOnline()) {
-        return
-      }
-      if (message.from.isMe) {
-        return
-      }
-      if (message.mentionned) {
-        this.logger.debug('[HandlerRespond] Im mentionned in the message, using XMPP references')
-      } else if (message.containsMyNick) {
-        this.logger.debug('[HandlerRespond] My nickname appears in the message text')
-      } else {
-        return
-      }
-      const mention = ReferenceMention.mention(this.txt, message.from.jid, '{{NICK}}')
-      this.room.sendGroupchat(mention.txt, mention.references).catch((err) => { this.logger.error(err) })
-    })
+    this.room.on('room_mentionned', this.roomMentionned)
   }
 
   public stop (): void {
-    this.removeAllListeners()
+    this.room.off('room_mentionned', this.roomMentionned)
   }
 }
 
