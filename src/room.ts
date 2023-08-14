@@ -59,7 +59,7 @@ class Room extends EventEmitter {
   public onlineUserCount (): number {
     let count = 0
     this.roster.forEach(user => {
-      if (user.state === 'online') { count++ }
+      if (user.isOnline()) { count++ }
     })
     return count
   }
@@ -165,11 +165,15 @@ class Room extends EventEmitter {
   }
 
   public receiveStanza (stanza: Stanza): void {
-    if (stanza.stanzaType === 'presence') {
-      this.receivePresenceStanza(stanza as PresenceStanza)
-    }
-    if (stanza.stanzaType === 'message') {
-      this.receiveMessageStanza(stanza as MessageStanza)
+    try {
+      if (stanza.stanzaType === 'presence') {
+        this.receivePresenceStanza(stanza as PresenceStanza)
+      }
+      if (stanza.stanzaType === 'message') {
+        this.receiveMessageStanza(stanza as MessageStanza)
+      }
+    } catch (err) {
+      this.logger.error('Error when processing a stanza: ' + (err as string))
     }
   }
 
@@ -190,55 +194,27 @@ class Room extends EventEmitter {
       return
     }
 
-    const isPresent = stanza.type !== 'unavailable'
-
-    const isMe: boolean = stanza.isMe()
-
     let user: RoomUser | undefined = this.roster.get(from.toString())
-    const previousState = user?.state
-    if (!isPresent) {
-      this.logger.debug('[Room:receivePresenceStanza] presence=unavailable...')
-      if (!user) {
-        this.logger.debug('[Room:receivePresenceStanza] user was not in roster, discard')
-        return
-      }
-      user.state = 'offline'
-      if (isMe) {
-        this.logger.debug('[Room:receivePresenceStanza] im offline, changing the room state to reflect')
-        this.state = 'offline'
-      }
-      if (previousState === 'online') {
-        if (this.isOnline()) {
-          // must skip if !isOnline, to ignore initials presence messages
-          this.logger.debug('[Room:receivePresenceStanza] user was previously online, emitting room_parted event')
-          this.emit('room_parted', user)
-        }
-      }
-    } else {
-      this.logger.debug('[Room:receivePresenceStanza] presence=yes')
-      if (!user) {
-        this.logger.debug('[Room:receivePresenceStanza] user not in roster, creating it')
-        user = new RoomUser(
-          this,
-          from,
-          isMe
-        )
-        user.state = 'online'
-        this.roster.set(from.toString(), user)
+    if (!user) {
+      this.logger.debug('[Room:receivePresenceStanza] user was not in roster, creating it')
+      user = new RoomUser(this, stanza)
+      this.roster.set(from.toString(), user)
+    }
+
+    // Updating userRoom object, and emitting events if state changed.
+    const updated = user.update(stanza)
+    if (user.isMe()) {
+      // updating room state
+      this.state = user.isOnline() ? 'online' : 'offline'
+    }
+    if (updated && this.isOnline()) {
+      // must skip if !room.isOnline, to ignore initials presence messages
+      if (user.isOnline()) {
+        this.logger.debug('[Room:receivePresenceStanza] user was previously not online, emitting room_joined event')
+        this.emit('room_joined', user)
       } else {
-        this.logger.debug('[Room:receivePresenceStanza] marking user online')
-        user.state = 'online'
-      }
-      if (isMe) {
-        this.logger.debug('[Room:receivePresenceStanza] im online, changing the room state to reflect')
-        this.state = 'online'
-      }
-      if (previousState !== 'online') {
-        if (this.isOnline()) {
-          // must skip if !isOnline, to ignore initials presence messages
-          this.logger.debug('[Room:receivePresenceStanza] user was previously not online, emitting room_joined event')
-          this.emit('room_joined', user)
-        }
+        this.logger.debug('[Room:receivePresenceStanza] user was previously online, emitting room_parted event')
+        this.emit('room_parted', user)
       }
     }
   }

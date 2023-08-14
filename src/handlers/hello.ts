@@ -23,7 +23,7 @@ class HandlerHello extends Handler {
     super(room)
 
     this.roomJoined = (user: RoomUser): void => {
-      if (user.isMe) {
+      if (user.isMe()) {
         return
       }
       if (this.delay !== undefined) {
