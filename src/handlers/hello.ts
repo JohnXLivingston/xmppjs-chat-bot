@@ -27,13 +27,18 @@ class HandlerHello extends Handler {
         return
       }
       if (this.delay !== undefined) {
-        const lastHello = this.lastHellos.get(user.jid.toString())
+        const jid = user.jid.toString()
+        const now = new Date()
+        const lastHello = this.lastHellos.get(jid)
         if (lastHello) {
-          const now = new Date()
-          if ((now.getTime() - lastHello.getTime()) < this.delay) {
+          this.logger.debug(`We already helloed the user ${jid}, checking if delay ${this.delay} is over.`)
+          if ((now.getTime() - lastHello.getTime()) < this.delay * 1000) {
+            this.logger.debug('Last hello was too recent.')
+            this.lastHellos.set(jid, now)
             return
           }
         }
+        this.lastHellos.set(jid, now)
       }
       const mention = ReferenceMention.mention(this.txt, user.jid, '{{NICK}}')
       this.room.sendGroupchat(mention.txt, mention.references).catch((err) => { this.logger.error(err) })
