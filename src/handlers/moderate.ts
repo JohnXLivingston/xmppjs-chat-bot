@@ -4,7 +4,7 @@ import { Handler } from './abstract'
 
 interface Rule {
   name: string
-  pattern: RegExp | RegExp[]
+  regexp: RegExp | RegExp[]
   reason?: string
 }
 
@@ -30,7 +30,7 @@ class HandlerModerate extends Handler {
       // Just one RegExp
       this.rules.push({
         name: rules.toString(),
-        pattern: rules
+        regexp: rules
       })
     } else {
       // Array<RegExp|Pattern>
@@ -38,12 +38,12 @@ class HandlerModerate extends Handler {
         if (rule instanceof RegExp) {
           this.rules.push({
             name: rule.toString(),
-            pattern: rule
+            regexp: rule
           })
-        } else if ((typeof rule === 'object') && rule.name && rule.pattern) {
+        } else if ((typeof rule === 'object') && rule.name && rule.regexp) {
           this.rules.push({
             name: rule.name,
-            pattern: rule.pattern,
+            regexp: rule.regexp,
             reason: rule.reason
           })
         } else {
@@ -57,9 +57,9 @@ class HandlerModerate extends Handler {
       if (!body.length) { return }
 
       for (const rule of this.rules) {
-        const patterns = Array.isArray(rule.pattern) ? rule.pattern : [rule.pattern]
-        for (const pattern of patterns) {
-          if (pattern.test(body)) {
+        const regexps = Array.isArray(rule.regexp) ? rule.regexp : [rule.regexp]
+        for (const regexp of regexps) {
+          if (regexp.test(body)) {
             this.logger.debug('Message match following rule: ' + rule.name)
             if (fromUser.isModerator()) {
               this.logger.debug('Ignoring the moderation rule ' + rule.name + ', because the user is moderator.')
