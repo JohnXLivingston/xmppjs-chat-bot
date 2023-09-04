@@ -1,15 +1,38 @@
 import type { Room } from '../room'
 import { Handler } from './abstract'
+import { HandlersDirectory } from '../handlers_directory'
 
 abstract class HandlerQuotesBase extends Handler {
   protected timeout: NodeJS.Timeout | undefined
+  protected quotes: string[]
+  protected quoteDelay: number
 
-  constructor (
-    room: Room,
-    protected readonly quotes: string[],
-    protected readonly quoteDelay: number = 10 * 1000
-  ) {
-    super(room)
+  constructor (room: Room, options: any) {
+    super(room, options)
+    this.quotes ??= []
+    this.quoteDelay ??= 10 * 1000
+  }
+
+  public loadOptions (options: any): void {
+    if (typeof options !== 'object') { return }
+    if (('quotes' in options) && (Array.isArray(options.quotes))) {
+      this.quotes = []
+      for (const q of options.quotes) {
+        if (typeof q === 'string') {
+          this.quotes.push(q)
+        }
+      }
+    }
+    if (('delay' in options) && (options.delay === undefined || (typeof options.delay === 'number'))) {
+      if (this.quoteDelay !== options.delay) {
+        this.quoteDelay = options.delay
+        if (this.timeout) {
+          // already started, must restart
+          this.stop()
+          this.start()
+        }
+      }
+    }
   }
 
   public start (): void {
@@ -22,6 +45,7 @@ abstract class HandlerQuotesBase extends Handler {
   public stop (): void {
     if (this.timeout) {
       clearInterval(this.timeout)
+      this.timeout = undefined
     }
   }
 
@@ -66,6 +90,9 @@ class HandlerRandomQuotes extends HandlerQuotesBase {
     return this.quotes[count]
   }
 }
+
+HandlersDirectory.singleton().register('quotes', HandlerQuotes)
+HandlersDirectory.singleton().register('quotes_random', HandlerRandomQuotes)
 
 export {
   HandlerQuotesBase,

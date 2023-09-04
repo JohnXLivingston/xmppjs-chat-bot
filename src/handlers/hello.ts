@@ -2,6 +2,7 @@ import type { Room } from '../room'
 import type { RoomUser } from '../user'
 import { Handler } from './abstract'
 import { ReferenceMention } from '../reference'
+import { HandlersDirectory } from '../handlers_directory'
 
 /**
  * HandlerHello: says hello to incoming users.
@@ -9,6 +10,8 @@ import { ReferenceMention } from '../reference'
 class HandlerHello extends Handler {
   protected readonly lastHellos: Map<string, Date> = new Map()
   private readonly roomJoined
+  protected txt: string
+  protected delay: number | undefined
 
   /**
    * @param room the room to handle
@@ -17,10 +20,10 @@ class HandlerHello extends Handler {
    */
   constructor (
     room: Room,
-    protected readonly txt: string = 'Hello {{NICK}}!',
-    protected readonly delay: number | undefined = undefined
+    options?: any
   ) {
-    super(room)
+    super(room, options)
+    this.txt ??= 'Hello {{NICK}}!'
 
     this.roomJoined = (user: RoomUser): void => {
       if (user.isMe()) {
@@ -45,6 +48,16 @@ class HandlerHello extends Handler {
     }
   }
 
+  public loadOptions (options: any): void {
+    if (typeof options !== 'object') { return }
+    if (('txt' in options) && (typeof options.txt === 'string')) {
+      this.txt = options.txt
+    }
+    if (('delay' in options) && (options.delay === undefined || (typeof options.delay === 'number'))) {
+      this.delay = options.delay
+    }
+  }
+
   public start (): void {
     this.room.on('room_joined', this.roomJoined)
   }
@@ -53,6 +66,8 @@ class HandlerHello extends Handler {
     this.room.off('room_joined', this.roomJoined)
   }
 }
+
+HandlersDirectory.singleton().register('hello', HandlerHello)
 
 export {
   HandlerHello

@@ -6,11 +6,14 @@ import { JID } from '@xmpp/jid'
 import xml from '@xmpp/xml'
 import { DefaultLogger, Logger, wrapLogger } from './logger'
 import { Room } from './room'
+import { listenRoomConfDir } from './config/listen'
+import type { RoomConf, RoomConfDefault } from './config/read'
 
 export class Bot {
   protected address?: JID
   public readonly logger: Logger
   protected rooms: Map<string, Room> = new Map()
+  protected dirListeners: Map<string, () => void> = new Map<string, () => {}>()
 
   constructor (
     public readonly botName: string,
@@ -59,6 +62,10 @@ export class Bot {
   }
 
   public async disconnect (): Promise<any> {
+    for (const [dir, callback] of this.dirListeners) {
+      this.logger.debug('Stop listening the configuration directory ' + dir)
+      callback()
+    }
     for (const [roomId, room] of this.rooms) {
       this.logger.debug(`Leaving room ${roomId}...`)
       await room.stopHandlers()
@@ -81,7 +88,7 @@ export class Bot {
     await this.xmpp.send(stanza)
   }
 
-  public async joinRoom (local: string, domain: string, resource: string): Promise<Room> {
+  public async joinRoom (local: string, domain: string, nick: string): Promise<Room> {
     const roomJID = new JID(local, domain)
     const roomJIDstr = roomJID.toString()
     let room: Room | undefined = this.rooms.get(roomJIDstr)
@@ -90,20 +97,65 @@ export class Bot {
       this.rooms.set(roomJIDstr, room)
     }
     this.logger.debug('Joining room ' + roomJID.toString())
-    await room.join(resource)
+    await room.join(nick)
     return room
   }
 
   public async partRoom (local: string, mucDomain: string): Promise<void> {
-    const roomJID = new JID(local, mucDomain)
-    const room = this.rooms.get(roomJID.toString())
+    const roomJID = (new JID(local, mucDomain)).toString()
+    const room = this.rooms.get(roomJID)
     if (!room) {
       return
     }
+    await room.stopHandlers()
     await room.part()
+    this.rooms.delete(roomJID)
   }
 
   public getAddress (): JID | undefined {
     return this.address
+  }
+
+  /**
+   * Load room configuration from a directory, and starts listening to file changes.
+   * @param dir directory path
+   * @param defaults the defaults value, in case some settings are missing in the conf files.
+   */
+  public async loadRoomConfDir (dir: string, defaults?: RoomConfDefault): Promise<void> {
+    if (this.dirListeners.has(dir)) {
+      this.logger.error('There is already a listener for the dir ' + dir)
+      return
+    }
+    this.logger.info('Loading and listening conf directory ' + dir + '...')
+    const w = await listenRoomConfDir(this, dir, defaults)
+    if (w) {
+      this.dirListeners.set(dir, w)
+    } else {
+      this.logger.error('Failed loading conf directory ' + dir)
+    }
+  }
+
+  public async loadRoomConf (conf: RoomConf): Promise<void> {
+    if (!conf) { return }
+
+    this.logger.debug('Loading conf...')
+    const enabled = conf.enabled
+    const roomJID = (new JID(conf.room, conf.domain)).toString()
+
+    if (!enabled) {
+      // in case we are still in the room...
+      if (this.rooms.has(roomJID)) {
+        this.logger.debug('Room disabled, Must leave room ' + roomJID)
+        await this.partRoom(conf.room, conf.domain)
+      }
+      return
+    }
+
+    if (!this.rooms.has(roomJID)) {
+      this.logger.debug('Room enabled, Joining room ' + roomJID)
+      await this.joinRoom(conf.room, conf.domain, conf.nick)
+    }
+
+    // TODO: detect nick change, and change nick if required.
   }
 }

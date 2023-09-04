@@ -2,12 +2,14 @@ import type { Room, RoomUser } from '../room'
 import type { MessageStanza } from '../stanza'
 import { Handler } from './abstract'
 import { ReferenceMention } from '../reference'
+import { HandlersDirectory } from '../handlers_directory'
 
 /**
  * HandlerRespond: respond when mentionned.
  */
 class HandlerRespond extends Handler {
   private readonly roomMentionned
+  protected txt: string
 
   /**
    * @param room
@@ -15,9 +17,10 @@ class HandlerRespond extends Handler {
    */
   constructor (
     room: Room,
-    protected readonly txt: string = 'Yes {{NICK}}?'
+    options?: any
   ) {
-    super(room)
+    super(room, options)
+    this.txt ??= 'Yes {{NICK}}?'
 
     this.roomMentionned = (stanza: MessageStanza, fromUser: RoomUser): void => {
       if (!stanza.from) {
@@ -25,6 +28,13 @@ class HandlerRespond extends Handler {
       }
       const mention = ReferenceMention.mention(this.txt, fromUser.jid, '{{NICK}}')
       this.room.sendGroupchat(mention.txt, mention.references).catch((err) => { this.logger.error(err) })
+    }
+  }
+
+  public loadOptions (options: any): void {
+    if (typeof options !== 'object') { return }
+    if (('txt' in options) && (typeof options.txt === 'string')) {
+      this.txt = options.txt
     }
   }
 
@@ -36,6 +46,8 @@ class HandlerRespond extends Handler {
     this.room.off('room_mentionned', this.roomMentionned)
   }
 }
+
+HandlersDirectory.singleton().register('respond', HandlerRespond)
 
 export {
   HandlerRespond

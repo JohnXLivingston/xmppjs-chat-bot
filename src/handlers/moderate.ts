@@ -1,6 +1,7 @@
 import type { Room, RoomUser } from '../room'
 import type { MessageStanza } from '../stanza'
 import { Handler } from './abstract'
+import { HandlersDirectory } from '../handlers_directory'
 
 interface Rule {
   name: string
@@ -13,7 +14,7 @@ interface Rule {
  */
 class HandlerModerate extends Handler {
   private readonly roomMessage
-  protected readonly rules: Rule[]
+  protected rules: Rule[]
 
   /**
    * @param room
@@ -21,13 +22,44 @@ class HandlerModerate extends Handler {
    */
   constructor (
     room: Room,
-    rules: Array<Rule|RegExp> | RegExp
+    options?: any
   ) {
-    super(room)
+    super(room, options)
+    this.rules ??= []
+
+    this.roomMessage = (stanza: MessageStanza, fromUser: RoomUser): void => {
+      const body = stanza.body()?.toString() ?? ''
+      if (!body.length) { return }
+
+      for (const rule of this.rules) {
+        const regexps = Array.isArray(rule.regexp) ? rule.regexp : [rule.regexp]
+        for (const regexp of regexps) {
+          if (regexp.test(body)) {
+            this.logger.debug('Message match following rule: ' + rule.name)
+            if (fromUser.isModerator()) {
+              this.logger.debug('Ignoring the moderation rule ' + rule.name + ', because the user is moderator.')
+              continue
+            }
+            this.room.moderateMessage(stanza, rule.reason).catch((err) => { this.logger.error(err) })
+            return
+          }
+        }
+      }
+    }
+  }
+
+  public loadOptions (options: any): void {
+    if (typeof options !== 'object') { return }
+
+    if (!('rules' in options)) { return }
+    const rules = options.rules
 
     this.rules = []
     if (!Array.isArray(rules)) {
       // Just one RegExp
+      if (!(rules instanceof RegExp)) {
+        throw new Error('Invalid rules options')
+      }
       this.rules.push({
         name: rules.toString(),
         regexp: rules
@@ -51,26 +83,6 @@ class HandlerModerate extends Handler {
         }
       }
     }
-
-    this.roomMessage = (stanza: MessageStanza, fromUser: RoomUser): void => {
-      const body = stanza.body()?.toString() ?? ''
-      if (!body.length) { return }
-
-      for (const rule of this.rules) {
-        const regexps = Array.isArray(rule.regexp) ? rule.regexp : [rule.regexp]
-        for (const regexp of regexps) {
-          if (regexp.test(body)) {
-            this.logger.debug('Message match following rule: ' + rule.name)
-            if (fromUser.isModerator()) {
-              this.logger.debug('Ignoring the moderation rule ' + rule.name + ', because the user is moderator.')
-              continue
-            }
-            this.room.moderateMessage(stanza, rule.reason).catch((err) => { this.logger.error(err) })
-            return
-          }
-        }
-      }
-    }
   }
 
   public start (): void {
@@ -81,6 +93,8 @@ class HandlerModerate extends Handler {
     this.room.off('room_mentionned', this.roomMessage)
   }
 }
+
+HandlersDirectory.singleton().register('moderate', HandlerModerate)
 
 export {
   HandlerModerate
