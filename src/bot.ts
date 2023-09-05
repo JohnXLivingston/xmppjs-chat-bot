@@ -1,5 +1,6 @@
 import type { Node, Element } from '@xmpp/xml'
 import type { XMPPElementType } from './stanza'
+import type { RoomConf } from './config/read'
 import { Stanza } from './stanza'
 import Connection from '@xmpp/connection'
 import { JID } from '@xmpp/jid'
@@ -7,7 +8,7 @@ import xml from '@xmpp/xml'
 import { DefaultLogger, Logger, wrapLogger } from './logger'
 import { Room } from './room'
 import { listenRoomConfDir } from './config/listen'
-import type { RoomConf, RoomConfDefault } from './config/read'
+import { HandlersDirectory } from './handlers_directory'
 
 export class Bot {
   protected address?: JID
@@ -68,7 +69,7 @@ export class Bot {
     }
     for (const [roomId, room] of this.rooms) {
       this.logger.debug(`Leaving room ${roomId}...`)
-      await room.stopHandlers()
+      await room.detachHandlers()
       await room.part()
     }
     await this.xmpp.stop()
@@ -107,7 +108,7 @@ export class Bot {
     if (!room) {
       return
     }
-    await room.stopHandlers()
+    await room.detachHandlers()
     await room.part()
     this.rooms.delete(roomJID)
   }
@@ -119,15 +120,14 @@ export class Bot {
   /**
    * Load room configuration from a directory, and starts listening to file changes.
    * @param dir directory path
-   * @param defaults the defaults value, in case some settings are missing in the conf files.
    */
-  public async loadRoomConfDir (dir: string, defaults?: RoomConfDefault): Promise<void> {
+  public async loadRoomConfDir (dir: string): Promise<void> {
     if (this.dirListeners.has(dir)) {
       this.logger.error('There is already a listener for the dir ' + dir)
       return
     }
     this.logger.info('Loading and listening conf directory ' + dir + '...')
-    const w = await listenRoomConfDir(this, dir, defaults)
+    const w = await listenRoomConfDir(this, dir)
     if (w) {
       this.dirListeners.set(dir, w)
     } else {
@@ -139,23 +139,51 @@ export class Bot {
     if (!conf) { return }
 
     this.logger.debug('Loading conf...')
-    const enabled = conf.enabled
-    const roomJID = (new JID(conf.room, conf.domain)).toString()
+    const enabled = conf.enabled ?? true
+    const roomJID = (new JID(conf.local, conf.domain)).toString()
 
     if (!enabled) {
       // in case we are still in the room...
       if (this.rooms.has(roomJID)) {
         this.logger.debug('Room disabled, Must leave room ' + roomJID)
-        await this.partRoom(conf.room, conf.domain)
+        await this.partRoom(conf.local, conf.domain)
       }
       return
     }
 
     if (!this.rooms.has(roomJID)) {
       this.logger.debug('Room enabled, Joining room ' + roomJID)
-      await this.joinRoom(conf.room, conf.domain, conf.nick)
+      await this.joinRoom(conf.local, conf.domain, conf.nick ?? this.botName)
+    }
+    const room = this.rooms.get(roomJID)
+    if (!room) {
+      this.logger.error('Failed getting the freshly joined room')
+      return
     }
 
     // TODO: detect nick change, and change nick if required.
+
+    for (const handlerConf of (conf.handlers ?? [])) {
+      const loadedHandler = room.getHandlerById(handlerConf.id)
+      const handlerEnabled = handlerConf.enabled ?? true
+      if (loadedHandler) {
+        if (handlerEnabled) {
+          loadedHandler.loadOptions(handlerConf.options)
+        } else {
+          room.detachHandlerById(loadedHandler.id)
+        }
+        continue
+      }
+
+      if (!handlerEnabled) { continue }
+
+      const HandlerClass = HandlersDirectory.singleton().getClass(handlerConf.type)
+      if (!HandlerClass) {
+        this.logger.error('Can\'t find class for handler type ' + handlerConf.type)
+        continue
+      }
+      const handler = new HandlerClass(handlerConf.id, room, handlerConf.options)
+      await handler.start()
+    }
   }
 }

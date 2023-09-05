@@ -21,10 +21,11 @@ class HandlerModerate extends Handler {
    * @param rules Rules to match on message content.
    */
   constructor (
+    id: string,
     room: Room,
     options?: any
   ) {
-    super(room, options)
+    super(id, room, options)
     this.rules ??= []
 
     this.roomMessage = (stanza: MessageStanza, fromUser: RoomUser): void => {

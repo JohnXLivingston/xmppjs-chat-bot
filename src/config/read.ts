@@ -2,26 +2,29 @@ import { client, Client, Options as ClientOptions } from '@xmpp/client'
 import { component, Component, Options as ComponentOptions } from '@xmpp/component'
 import debug from '@xmpp/debug'
 import { Bot } from '../bot'
-import { Handler } from '../handlers'
 import { ConsoleLogger } from '../logger'
-import { Room } from '../room'
-import { HandlersDirectory } from '../handlers_directory'
 import fs from 'fs'
 
 interface ConfigHandler {
+  id: string
   type: string
+  enabled?: boolean
   options: any
+}
+
+interface RoomConf {
+  local: string
+  domain: string
+  nick?: string
+  enabled?: boolean
+  handlers: ConfigHandler[]
 }
 
 interface ConfigBase {
   debug?: boolean
   name?: string
   logger?: 'ConsoleLogger'
-  rooms?: Array<{
-    local?: string
-    domain?: string
-    handlers?: ConfigHandler[]
-  }>
+  rooms?: RoomConf[]
   handlers?: ConfigHandler[]
 }
 
@@ -37,23 +40,34 @@ interface ConfigComponent extends ConfigBase {
 
 type Config = ConfigClient | ConfigComponent
 
-async function loadHandler (room: Room, handler: ConfigHandler): Promise<Handler | undefined> {
-  const HandlerClass = HandlersDirectory.singleton().getClass(handler.type)
-  if (!HandlerClass) {
-    // FIXME: don't use console.error...
-    console.error(`Unknown handler type '${(handler as any).type as string}`)
-    return undefined
-  }
-  return new HandlerClass(room, handler.options)
-}
+/**
+ * Loads a bot from a configuration object or file.
+ * @param config: Configuration filepath, or configuration object
+ */
+async function getBotFromConfig (config: Config | string): Promise<Bot> {
+  if (typeof config === 'string') {
+    const filePath = config
+    const content = await fs.promises.readFile(filePath, { encoding: 'utf8' })
+    const json = JSON.parse(content)
 
-async function getBotFromConfig (config: Config): Promise<Bot> {
+    if (!json) {
+      throw new Error(`File ${filePath} seems to be empty.`)
+    }
+    if (typeof json !== 'object') {
+      throw new Error(`File ${filePath} dont seem to contain a json object`)
+    }
+    config = json
+  } else {
+    // To avoid side effect (because we later on merge some stuff in config), cloning config:
+    config = JSON.parse(JSON.stringify(config))
+  }
   if (!config) {
     throw new Error('Missing config')
   }
   if (typeof config !== 'object') {
     throw new Error('Config invalid. Should be an object.')
   }
+
   let connection: Client | Component
   if (config.type === 'client') {
     connection = client(config.connection)
@@ -74,6 +88,9 @@ async function getBotFromConfig (config: Config): Promise<Bot> {
 
   const bot = new Bot(config.name ?? 'Bot', connection, logger)
   await bot.connect()
+  if (!config.rooms) {
+    return bot
+  }
   try {
     if (!Array.isArray(config.rooms)) {
       throw new Error('The room entry must be an array')
@@ -82,15 +99,11 @@ async function getBotFromConfig (config: Config): Promise<Bot> {
       if (!roomConfig.domain || !roomConfig.local) {
         throw new Error('Invalid room configuration')
       }
-      const room = await bot.joinRoom(roomConfig.local, roomConfig.domain, bot.botName)
-      for (const handler of (config.handlers ?? [])) {
-        const h = await loadHandler(room, handler)
-        if (h) { await h.start() }
+      // Now, merging global handlers into roomConfig.
+      if (config.handlers && Array.isArray(config.handlers) && config.handlers.length) {
+        roomConfig.handlers = config.handlers.concat(roomConfig.handlers)
       }
-      for (const handler of (roomConfig.handlers ?? [])) {
-        const h = await loadHandler(room, handler)
-        if (h) { await h.start() }
-      }
+      await bot.loadRoomConf(roomConfig)
     }
   } catch (err) {
     console.error(err) // FIXME: don't use console.error
@@ -98,50 +111,31 @@ async function getBotFromConfig (config: Config): Promise<Bot> {
   return bot
 }
 
-interface RoomConf {
-  room: string
-  nick: string
-  domain: string
-  enabled: boolean
-  handlers: ConfigHandler[]
-}
-
-interface RoomConfDefault {
-  domain?: string
-  nick?: string
-}
-
 /**
  * Reads a JSON Room Configuration file, and returns a well formatted object
  * that can then be used to load or reload the room bot configuration.
  * @param filepath file path
- * @param defaults the defaults values
  * @returns well formatted Room configuration object, or null if the file can't be loaded.
  */
-async function readRoomConf (filepath: string, defaults?: RoomConfDefault): Promise<RoomConf | null> {
+async function readRoomConf (filepath: string): Promise<RoomConf | null> {
   try {
     const content = await fs.promises.readFile(filepath)
     const o = JSON.parse(content.toString())
     if (typeof o !== 'object') { return null }
-    if (!('room' in o) || !o.room || (typeof o.room !== 'string')) { return null }
-    const room = o.room
+    if (!('local' in o) || !o.local || (typeof o.local !== 'string')) { return null }
+    const local = o.local
+
     const enabled = !!o.enabled
     const handlers: ConfigHandler[] = []
     let domain: string
     if (('domain' in o) && (typeof o.domain === 'string')) {
       domain = o.domain
-    } else if (defaults?.domain) {
-      domain = defaults?.domain
     } else {
       throw new Error('Missing domain')
     }
-    let nick: string
+    let nick: string | undefined
     if (('nick' in o) && (typeof o.nick === 'string')) {
       nick = o.nick
-    } else if (defaults?.nick) {
-      nick = defaults?.nick
-    } else {
-      throw new Error('Missing nick')
     }
 
     if (('handlers' in o) && Array.isArray(o.handlers)) {
@@ -149,7 +143,11 @@ async function readRoomConf (filepath: string, defaults?: RoomConfDefault): Prom
         if (!('type' in h) || !(typeof h.type === 'string')) {
           continue
         }
+        if (!('id' in h) || !(typeof h.id === 'string')) {
+          continue
+        }
         const handler: ConfigHandler = {
+          id: h.id,
           type: h.type,
           options: {}
         }
@@ -161,9 +159,9 @@ async function readRoomConf (filepath: string, defaults?: RoomConfDefault): Prom
     }
 
     return {
-      room,
-      nick,
+      local,
       domain,
+      nick,
       enabled,
       handlers
     }
@@ -176,6 +174,5 @@ async function readRoomConf (filepath: string, defaults?: RoomConfDefault): Prom
 export {
   getBotFromConfig,
   readRoomConf,
-  RoomConf,
-  RoomConfDefault
+  RoomConf
 }

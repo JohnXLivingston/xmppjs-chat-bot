@@ -16,10 +16,11 @@ class HandlerRespond extends Handler {
    * @param txt the message to respond when mentionned. Use the {{NICK}} placeholder to insert the user nick name.
    */
   constructor (
+    id: string,
     room: Room,
     options?: any
   ) {
-    super(room, options)
+    super(id, room, options)
     this.txt ??= 'Yes {{NICK}}?'
 
     this.roomMentionned = (stanza: MessageStanza, fromUser: RoomUser): void => {

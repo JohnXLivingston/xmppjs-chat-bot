@@ -7,8 +7,8 @@ abstract class HandlerQuotesBase extends Handler {
   protected quotes: string[]
   protected quoteDelay: number
 
-  constructor (room: Room, options: any) {
-    super(room, options)
+  constructor (id: string, room: Room, options: any) {
+    super(id, room, options)
     this.quotes ??= []
     this.quoteDelay ??= 10 * 1000
   }

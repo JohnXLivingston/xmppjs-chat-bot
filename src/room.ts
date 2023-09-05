@@ -30,7 +30,7 @@ class Room extends EventEmitter {
   protected readonly roster: Map<string, RoomUser> = new Map()
   public readonly logger: Logger
 
-  protected readonly handlers: Handler[] = []
+  protected readonly handlers: {[id: string]: Handler} = {}
 
   constructor (
     protected readonly bot: Bot,
@@ -267,13 +267,33 @@ class Room extends EventEmitter {
   }
 
   public attachHandler (handler: Handler): void {
-    this.handlers.push(handler)
+    if (handler.id in this.handlers) {
+      throw new Error('Can\'t attach handler, there is already an handler with the same id: ' + handler.id)
+    }
+    this.handlers[handler.id] = handler
   }
 
-  public stopHandlers (): void {
-    for (const handler of this.handlers) {
+  public detachHandlers (): void {
+    this.logger.debug('Stoping and Detaching all handlers')
+    for (const id of Object.keys(this.handlers)) {
+      const handler = this.handlers[id]
       handler.stop()
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete this.handlers[id]
     }
+  }
+
+  public getHandlerById (id: string): Handler | null {
+    return this.handlers[id] ?? null
+  }
+
+  public detachHandlerById (id: string): void {
+    const handler = this.handlers[id]
+    if (!handler) { return }
+    this.logger.debug('Stoping and Detaching handler ' + id)
+    handler.stop()
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete this.handlers[id]
   }
 }
 

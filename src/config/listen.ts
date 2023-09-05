@@ -1,6 +1,6 @@
 import type { Bot } from '../bot'
 import { wrapLogger } from '../logger'
-import { RoomConfDefault, readRoomConf } from './read'
+import { readRoomConf } from './read'
 import fs from 'fs'
 import path from 'path'
 
@@ -15,7 +15,7 @@ import path from 'path'
  * @param defaults the defaults values
  * @returns A callback function to call to stop listening file changes, or null if the folder does not exist.
  */
-async function listenRoomConfDir (bot: Bot, dir: string, defaults?: RoomConfDefault): Promise<null | (() => void)> {
+async function listenRoomConfDir (bot: Bot, dir: string): Promise<null | (() => void)> {
   const logger = wrapLogger('listenRoomConfDir', bot.logger)
   const delays = new Map<string, NodeJS.Timeout>()
 
@@ -32,7 +32,7 @@ async function listenRoomConfDir (bot: Bot, dir: string, defaults?: RoomConfDefa
   const loadRoomConfFile = async (filepath: string): Promise<void> => {
     const stat = await fs.promises.stat(filepath)
     if (stat.isDirectory()) { return }
-    const conf = await readRoomConf(filepath, defaults)
+    const conf = await readRoomConf(filepath)
     if (conf) {
       await bot.loadRoomConf(conf)
     }

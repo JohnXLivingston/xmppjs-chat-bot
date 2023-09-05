@@ -46,7 +46,7 @@ async function start (): Promise<void> {
       const room = await bot.joinRoom(roomId, 'room.localhost', 'DemoBot')
 
       // Create some handlers. Each handler provide some functionnalities.
-      const handlerHello = new HandlerHello(room)
+      const handlerHello = new HandlerHello('my_hello_handler', room)
       // Then start the handlers.
       handlerHello.start()
     }

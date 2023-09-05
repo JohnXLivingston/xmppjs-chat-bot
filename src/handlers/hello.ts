@@ -19,10 +19,11 @@ class HandlerHello extends Handler {
    * @param delay if not undefined, do not repeat hello message if the user was already welcomed this past delay seconds
    */
   constructor (
+    id: string,
     room: Room,
     options?: any
   ) {
-    super(room, options)
+    super(id, room, options)
     this.txt ??= 'Hello {{NICK}}!'
 
     this.roomJoined = (user: RoomUser): void => {
