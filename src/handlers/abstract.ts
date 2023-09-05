@@ -14,6 +14,7 @@ abstract class Handler {
     this.id = id
     this.room = room
     this.logger = wrapLogger(this.constructor.name, room.logger)
+    this.logger.debug('Loading options on the freshly created ' + this.id + ' handler')
     this.loadOptions(options ?? {})
     this.room.attachHandler(this)
   }

@@ -39,11 +39,11 @@ function _addPrefix (s: string, name: string): string {
   if (!s.startsWith('[')) {
     return `[${name}] ` + s
   }
-  return s.replace(/^(\[\S+\])*/, '$&[' + name + ']')
+  return `[${name}]` + s
 }
 
 function wrapLogger (name: string, logger: Logger): Logger {
-  name = name.replace(/(\s+|\[|\]|\$|&)/g, '_')
+  // name = name.replace(/(\s+|\[|\]|\$|&)/g, '_')
   return {
     debug: (s) => logger.debug(_addPrefix(s, name)),
     info: (s) => logger.info(_addPrefix(s, name)),

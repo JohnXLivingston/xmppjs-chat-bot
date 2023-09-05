@@ -167,6 +167,7 @@ export class Bot {
     }
     this.logger.info('Loading and listening conf directory ' + dir + '...')
     const w = await listenRoomConfDir(this.logger, dir, async (conf) => {
+      this.logger.debug('(re)Loading a room configuration')
       await this.loadRoomConf(conf)
     })
     if (w) {
@@ -201,7 +202,7 @@ export class Bot {
       return
     }
 
-    this.logger.debug('Room ' + roomJID + 'is enabled')
+    this.logger.debug('Room ' + roomJID + ' is enabled')
 
     if (!this.rooms.has(roomJID)) {
       this.logger.debug('Room enabled, Joining room ' + roomJID)
