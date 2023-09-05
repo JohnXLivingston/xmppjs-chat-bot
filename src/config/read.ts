@@ -2,7 +2,7 @@ import { client, Client, Options as ClientOptions } from '@xmpp/client'
 import { component, Component, Options as ComponentOptions } from '@xmpp/component'
 import debug from '@xmpp/debug'
 import { Bot } from '../bot'
-import { ConsoleLogger } from '../logger'
+import { ConsoleLogger, DefaultLogger, Logger, wrapLogger } from '../logger'
 import fs from 'fs'
 
 interface ConfigHandler {
@@ -85,6 +85,7 @@ async function getBotFromConfig (config: Config | string): Promise<Bot> {
   if (config.logger === 'ConsoleLogger') {
     logger = new ConsoleLogger()
   }
+  logger ??= new DefaultLogger()
 
   const bot = new Bot(config.name ?? 'Bot', connection, logger)
   await bot.connect()
@@ -99,40 +100,56 @@ async function getBotFromConfig (config: Config | string): Promise<Bot> {
       if (!roomConfig.domain || !roomConfig.local) {
         throw new Error('Invalid room configuration')
       }
+      const cleanedRoomConfig = await readRoomConf(roomConfig, logger)
+      if (!cleanedRoomConfig) {
+        throw new Error('Invalid room configuration')
+      }
       // Now, merging global handlers into roomConfig.
       if (config.handlers && Array.isArray(config.handlers) && config.handlers.length) {
-        roomConfig.handlers = config.handlers.concat(roomConfig.handlers)
+        cleanedRoomConfig.handlers = config.handlers.concat(cleanedRoomConfig.handlers)
       }
-      await bot.loadRoomConf(roomConfig)
+      await bot.loadRoomConf(cleanedRoomConfig)
     }
   } catch (err) {
-    console.error(err) // FIXME: don't use console.error
+    logger.error(err as string)
   }
   return bot
 }
 
 /**
- * Reads a JSON Room Configuration file, and returns a well formatted object
+ * Reads and clean a JSON Room Configuration file, and returns a well formatted object
  * that can then be used to load or reload the room bot configuration.
- * @param filepath file path
+ * @param config file path or config object
  * @returns well formatted Room configuration object, or null if the file can't be loaded.
  */
-async function readRoomConf (filepath: string): Promise<RoomConf | null> {
+async function readRoomConf (config: string | any, logger?: Logger): Promise<RoomConf | null> {
+  logger ??= new DefaultLogger()
+  logger = wrapLogger('readRoomConf', logger)
   try {
-    const content = await fs.promises.readFile(filepath)
-    const o = JSON.parse(content.toString())
-    if (typeof o !== 'object') { return null }
-    if (!('local' in o) || !o.local || (typeof o.local !== 'string')) { return null }
+    let o: any
+    if (typeof config === 'string') {
+      const content = await fs.promises.readFile(config)
+      o = JSON.parse(content.toString())
+    } else {
+      o = config
+    }
+    if (typeof o !== 'object') {
+      logger.error('Config parameter is not an object, can\'t load.')
+      return null
+    }
+    if (!('local' in o) || !o.local || (typeof o.local !== 'string')) {
+      logger.error('Missing local attribute')
+      return null
+    }
     const local = o.local
+    if (!('domain' in o) || !(typeof o.domain === 'string')) {
+      logger.error('Missing domain attribute')
+      return null
+    }
+    const domain = o.domain
 
     const enabled = !!o.enabled
     const handlers: ConfigHandler[] = []
-    let domain: string
-    if (('domain' in o) && (typeof o.domain === 'string')) {
-      domain = o.domain
-    } else {
-      throw new Error('Missing domain')
-    }
     let nick: string | undefined
     if (('nick' in o) && (typeof o.nick === 'string')) {
       nick = o.nick
@@ -141,9 +158,11 @@ async function readRoomConf (filepath: string): Promise<RoomConf | null> {
     if (('handlers' in o) && Array.isArray(o.handlers)) {
       for (const h of o.handlers) {
         if (!('type' in h) || !(typeof h.type === 'string')) {
+          logger.error('Missing type attribute for handler configuration')
           continue
         }
         if (!('id' in h) || !(typeof h.id === 'string')) {
+          logger.error('Missing id attribute for handler configuration')
           continue
         }
         const handler: ConfigHandler = {
@@ -166,7 +185,7 @@ async function readRoomConf (filepath: string): Promise<RoomConf | null> {
       handlers
     }
   } catch (err) {
-    // FIXME: what is the proper way to log? not console.log...
+    logger.error(err as string)
     return null
   }
 }

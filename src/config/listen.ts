@@ -1,22 +1,26 @@
-import type { Bot } from '../bot'
-import { wrapLogger } from '../logger'
-import { readRoomConf } from './read'
+import { Logger, wrapLogger } from '../logger'
+import { readRoomConf, RoomConf } from './read'
 import fs from 'fs'
 import path from 'path'
 
 /**
  * Loads configuration from a directory (and not in sub-directories).
- * In this directory, each files contains the configuration for one room.
+ * In this directory, each files should contains the configuration for one room.
  * File changes, addition, and deletion in this directory will be listened, and
- * the bot will automatically be reloaded.
+ * the callback will automatically be called on any change, so that the bot can reload.
  * This function returns a callback that can be called to stop listening file changes.
+ * Please note that the callback will also be called for each already existing files.
  * @param bot the bot
  * @param dir path to a directory
- * @param defaults the defaults values
+ * @param callback the callback to call when there is a file change
  * @returns A callback function to call to stop listening file changes, or null if the folder does not exist.
  */
-async function listenRoomConfDir (bot: Bot, dir: string): Promise<null | (() => void)> {
-  const logger = wrapLogger('listenRoomConfDir', bot.logger)
+async function listenRoomConfDir (
+  logger: Logger,
+  dir: string,
+  callback: (conf: RoomConf) => Promise<void>
+): Promise<null | (() => void)> {
+  logger = wrapLogger('listenRoomConfDir', logger)
   const delays = new Map<string, NodeJS.Timeout>()
 
   if (!fs.existsSync(dir)) {
@@ -31,10 +35,15 @@ async function listenRoomConfDir (bot: Bot, dir: string): Promise<null | (() => 
 
   const loadRoomConfFile = async (filepath: string): Promise<void> => {
     const stat = await fs.promises.stat(filepath)
-    if (stat.isDirectory()) { return }
-    const conf = await readRoomConf(filepath)
+    if (stat.isDirectory()) {
+      logger.error(filepath + ' is a directory, can`t load as file')
+      return
+    }
+    const conf = await readRoomConf(filepath, logger)
     if (conf) {
-      await bot.loadRoomConf(conf)
+      await callback(conf)
+    } else {
+      logger.error('Can\'t load ' + filepath + ' , seems not valid')
     }
   }
 

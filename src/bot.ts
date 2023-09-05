@@ -1,6 +1,6 @@
 import type { Node, Element } from '@xmpp/xml'
 import type { XMPPElementType } from './stanza'
-import type { RoomConf } from './config/read'
+import { getBotFromConfig, type RoomConf } from './config/read'
 import { Stanza } from './stanza'
 import Connection from '@xmpp/connection'
 import { JID } from '@xmpp/jid'
@@ -11,19 +11,37 @@ import { listenRoomConfDir } from './config/listen'
 import { HandlersDirectory } from './handlers_directory'
 
 export class Bot {
+  public readonly botName: string
+  protected readonly xmpp: Connection
   protected address?: JID
   public readonly logger: Logger
   protected rooms: Map<string, Room> = new Map()
   protected dirListeners: Map<string, () => void> = new Map<string, () => {}>()
 
   constructor (
-    public readonly botName: string,
-    protected readonly xmpp: Connection,
+    botName: string,
+    xmpp: Connection,
     logger?: Logger
   ) {
+    this.botName = botName
+    this.xmpp = xmpp
     this.logger = wrapLogger(botName, logger ?? new DefaultLogger())
   }
 
+  /**
+   * Creates a bot from a configuration file.
+   * Can throw an error if the configuration file is not correct.
+   * @param filepath configuration file path
+   * @returns a bot
+   */
+  public static async loadsFromConfigFile (filepath: string): Promise<Bot> {
+    const bot = await getBotFromConfig(filepath)
+    return bot
+  }
+
+  /**
+   * Start the connection process.
+   */
   public async connect (): Promise<void> {
     this.xmpp.on('error', (err: any) => {
       this.logger.error(err)
@@ -62,6 +80,9 @@ export class Bot {
     await this.xmpp.start()
   }
 
+  /**
+   * Stops all handlers, leave all rooms, and disconnect the bot.
+   */
   public async disconnect (): Promise<any> {
     for (const [dir, callback] of this.dirListeners) {
       this.logger.debug('Stop listening the configuration directory ' + dir)
@@ -89,6 +110,13 @@ export class Bot {
     await this.xmpp.send(stanza)
   }
 
+  /**
+   * Joins a MUC room.
+   * @param local local part of the room JID
+   * @param domain MUC domain
+   * @param nick Nickname to use
+   * @returns the room object
+   */
   public async joinRoom (local: string, domain: string, nick: string): Promise<Room> {
     const roomJID = new JID(local, domain)
     const roomJIDstr = roomJID.toString()
@@ -102,6 +130,12 @@ export class Bot {
     return room
   }
 
+  /**
+   * Detach all hanlders, and leaves a room.
+   * @param local local part of the room JID
+   * @param mucDomain MUC domain
+   * @returns void
+   */
   public async partRoom (local: string, mucDomain: string): Promise<void> {
     const roomJID = (new JID(local, mucDomain)).toString()
     const room = this.rooms.get(roomJID)
@@ -113,12 +147,17 @@ export class Bot {
     this.rooms.delete(roomJID)
   }
 
+  /**
+   * Get the bot JID.
+   * @returns the bot JID
+   */
   public getAddress (): JID | undefined {
     return this.address
   }
 
   /**
-   * Load room configuration from a directory, and starts listening to file changes.
+   * Load room configuration from a directory,
+   * and starts listening to file changes (and reload configuration if needed).
    * @param dir directory path
    */
   public async loadRoomConfDir (dir: string): Promise<void> {
@@ -127,7 +166,9 @@ export class Bot {
       return
     }
     this.logger.info('Loading and listening conf directory ' + dir + '...')
-    const w = await listenRoomConfDir(this, dir)
+    const w = await listenRoomConfDir(this.logger, dir, async (conf) => {
+      await this.loadRoomConf(conf)
+    })
     if (w) {
       this.dirListeners.set(dir, w)
     } else {
@@ -135,21 +176,32 @@ export class Bot {
     }
   }
 
+  /**
+   * Loads a room configuration from a configuration object.
+   * Create or updates all handlers mentionned in the configuration.
+   * @param conf room configuration
+   * @returns void
+   */
   public async loadRoomConf (conf: RoomConf): Promise<void> {
     if (!conf) { return }
 
     this.logger.debug('Loading conf...')
-    const enabled = conf.enabled ?? true
+    const enabled = !!(conf.enabled ?? true)
     const roomJID = (new JID(conf.local, conf.domain)).toString()
 
     if (!enabled) {
+      this.logger.debug('Room ' + roomJID + 'is disabled')
       // in case we are still in the room...
       if (this.rooms.has(roomJID)) {
-        this.logger.debug('Room disabled, Must leave room ' + roomJID)
+        this.logger.debug('Room ' + roomJID + ' disabled, Must leave room ' + roomJID)
         await this.partRoom(conf.local, conf.domain)
+      } else {
+        this.logger.debug('Room ' + roomJID + ' was not loaded')
       }
       return
     }
+
+    this.logger.debug('Room ' + roomJID + 'is enabled')
 
     if (!this.rooms.has(roomJID)) {
       this.logger.debug('Room enabled, Joining room ' + roomJID)
@@ -165,7 +217,7 @@ export class Bot {
 
     for (const handlerConf of (conf.handlers ?? [])) {
       const loadedHandler = room.getHandlerById(handlerConf.id)
-      const handlerEnabled = handlerConf.enabled ?? true
+      const handlerEnabled = !!(handlerConf.enabled ?? true)
       if (loadedHandler) {
         if (handlerEnabled) {
           loadedHandler.loadOptions(handlerConf.options)

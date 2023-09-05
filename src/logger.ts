@@ -35,12 +35,20 @@ class ConsoleLogger implements Logger {
   }
 }
 
+function _addPrefix (s: string, name: string): string {
+  if (!s.startsWith('[')) {
+    return `[${name}] ` + s
+  }
+  return s.replace(/^(\[\S+\])*/, '$&[' + name + ']')
+}
+
 function wrapLogger (name: string, logger: Logger): Logger {
+  name = name.replace(/(\s+|\[|\]|\$|&)/g, '_')
   return {
-    debug: (s) => logger.debug(`[${name}] ` + s),
-    info: (s) => logger.info(`[${name}] ` + s),
-    warn: (s) => logger.warn(`[${name}] ` + s),
-    error: (s) => logger.error(`[${name}] ` + s)
+    debug: (s) => logger.debug(_addPrefix(s, name)),
+    info: (s) => logger.info(_addPrefix(s, name)),
+    warn: (s) => logger.warn(_addPrefix(s, name)),
+    error: (s) => logger.error(_addPrefix(s, name))
   }
 }
 
