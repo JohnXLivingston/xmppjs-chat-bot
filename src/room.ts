@@ -97,6 +97,16 @@ class Room extends EventEmitter {
     // FIXME: should wait for a presence stanza from the server.
   }
 
+  /**
+   * Changes the bot nickname
+   * @param nick new nickname
+   * @returns void
+   */
+  public async changeNickname (nick: string): Promise<void> {
+    // Changing nickname is equivalent to join a room.
+    return this.join(nick)
+  }
+
   public async sendGroupchat (msg: string, references?: Reference[]): Promise<void> {
     if (!this.userJID) { return }
     this.logger.debug(`Emitting a groupchat message for room ${this.roomJID.toString()}...`)

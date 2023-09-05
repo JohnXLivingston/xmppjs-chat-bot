@@ -204,9 +204,11 @@ export class Bot {
 
     this.logger.debug('Room ' + roomJID + ' is enabled')
 
+    const nickname = conf.nick ?? this.botName
+
     if (!this.rooms.has(roomJID)) {
       this.logger.info('Room enabled, Joining room ' + roomJID)
-      await this.joinRoom(conf.local, conf.domain, conf.nick ?? this.botName)
+      await this.joinRoom(conf.local, conf.domain, nickname)
     }
     const room = this.rooms.get(roomJID)
     if (!room) {
@@ -214,7 +216,11 @@ export class Bot {
       return
     }
 
-    // TODO: detect nick change, and change nick if required.
+    const currentNickname = room.myNick
+    if (currentNickname && nickname !== currentNickname) {
+      this.logger.info('Changing nickname for room ' + roomJID)
+      await room.changeNickname(nickname)
+    }
 
     for (const handlerConf of (conf.handlers ?? [])) {
       const loadedHandler = room.getHandlerById(handlerConf.id)
