@@ -2,7 +2,7 @@ import { client, Client, Options as ClientOptions } from '@xmpp/client'
 import { component, Component, Options as ComponentOptions } from '@xmpp/component'
 import debug from '@xmpp/debug'
 import { Bot } from '../bot'
-import { ConsoleLogger, DefaultLogger, Logger, wrapLogger } from '../logger'
+import { ConsoleLogger, ColorConsoleLogger, DefaultLogger, Logger, wrapLogger } from '../logger'
 import fs from 'fs'
 
 interface ConfigHandler {
@@ -84,6 +84,8 @@ async function getBotFromConfig (config: Config | string): Promise<Bot> {
   let logger
   if (config.logger === 'ConsoleLogger') {
     logger = new ConsoleLogger()
+  } else if (config.logger === 'ColorConsoleLogger') {
+    logger = new ColorConsoleLogger()
   }
   logger ??= new DefaultLogger()
 
