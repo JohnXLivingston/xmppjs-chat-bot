@@ -78,10 +78,16 @@ class MessageStanza extends Stanza {
       jids = [jids]
     }
     const jidsStrings = jids.map(jid => 'xmpp:' + jid.toString())
+
     const references = this.xml.getChildren('reference')
     for (const reference of references) {
       if (reference.attrs.type !== 'mention') { continue }
       if (jidsStrings.includes(reference.attrs.uri)) {
+        return true
+      }
+      // Note: it seems that the nicknames can be html-encoded in reference.attrs.uri, and not in jid.toString().
+      // So we must also check this:
+      if (jidsStrings.includes(decodeURI(reference.attrs.uri))) {
         return true
       }
     }
