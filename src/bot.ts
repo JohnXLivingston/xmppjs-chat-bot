@@ -186,15 +186,15 @@ export class Bot {
   public async loadRoomConf (conf: RoomConf): Promise<void> {
     if (!conf) { return }
 
-    this.logger.debug('Loading conf...')
     const enabled = !!(conf.enabled ?? true)
     const roomJID = (new JID(conf.local, conf.domain)).toString()
+    this.logger.info('(re)Loading conf for room ' + roomJID + '...')
 
     if (!enabled) {
       this.logger.debug('Room ' + roomJID + 'is disabled')
       // in case we are still in the room...
       if (this.rooms.has(roomJID)) {
-        this.logger.debug('Room ' + roomJID + ' disabled, Must leave room ' + roomJID)
+        this.logger.info('Room ' + roomJID + ' disabled, Must leave room ' + roomJID)
         await this.partRoom(conf.local, conf.domain)
       } else {
         this.logger.debug('Room ' + roomJID + ' was not loaded')
@@ -205,7 +205,7 @@ export class Bot {
     this.logger.debug('Room ' + roomJID + ' is enabled')
 
     if (!this.rooms.has(roomJID)) {
-      this.logger.debug('Room enabled, Joining room ' + roomJID)
+      this.logger.info('Room enabled, Joining room ' + roomJID)
       await this.joinRoom(conf.local, conf.domain, conf.nick ?? this.botName)
     }
     const room = this.rooms.get(roomJID)
@@ -221,20 +221,28 @@ export class Bot {
       const handlerEnabled = !!(handlerConf.enabled ?? true)
       if (loadedHandler) {
         if (handlerEnabled) {
+          this.logger.info(
+            'The handler ' + loadedHandler.id + ' was already loaded, reloading its configuration for room ' + roomJID
+          )
           loadedHandler.loadOptions(handlerConf.options)
         } else {
+          this.logger.info('The handler ' + loadedHandler.id + ' must be detached for room ' + roomJID)
           room.detachHandlerById(loadedHandler.id)
         }
         continue
       }
 
-      if (!handlerEnabled) { continue }
+      if (!handlerEnabled) {
+        this.logger.debug('The handler ' + handlerConf.id + ' is disabled, and was not loaded for room ' + roomJID)
+        continue
+      }
 
       const HandlerClass = HandlersDirectory.singleton().getClass(handlerConf.type)
       if (!HandlerClass) {
         this.logger.error('Can\'t find class for handler type ' + handlerConf.type)
         continue
       }
+      this.logger.info('The handler ' + handlerConf.id + ' must be created and started for room ' + roomJID)
       const handler = new HandlerClass(handlerConf.id, room, handlerConf.options)
       await handler.start()
     }

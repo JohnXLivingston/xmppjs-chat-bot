@@ -41,6 +41,7 @@ async function listenRoomConfDir (
     }
     const conf = await readRoomConf(filepath, logger)
     if (conf) {
+      logger.debug('Conf readed, we can call the callback')
       await callback(conf)
     } else {
       logger.error('Can\'t load ' + filepath + ' , seems not valid')
@@ -58,7 +59,14 @@ async function listenRoomConfDir (
       delays.delete(filename)
       logger.debug('Handling change on ' + filename)
 
-      loadRoomConfFile(filename).then(() => {}, () => {})
+      const filepath = path.resolve(dir, filename)
+      loadRoomConfFile(filepath).then(
+        () => {
+          logger.debug('New Conf loaded')
+        },
+        (err) => {
+          logger.error(err ?? 'Failed loading new conf')
+        })
     }, 100))
   })
 

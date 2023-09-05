@@ -27,6 +27,7 @@ abstract class HandlerQuotesBase extends Handler {
       if (this.quoteDelay !== options.delay) {
         this.quoteDelay = options.delay
         if (this.timeout) {
+          this.logger.info('The quote dealy has changed, we must stop and start the handler again')
           // already started, must restart
           this.stop()
           this.start()

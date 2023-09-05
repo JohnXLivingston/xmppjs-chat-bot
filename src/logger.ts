@@ -53,11 +53,18 @@ class ColorConsoleLogger extends ConsoleLogger {
   }
 }
 
-function _addPrefix (s: string, name: string): string {
-  if (!s.startsWith('[')) {
-    return `[${name}] ` + s
+function _addPrefix (s: any, name: string): string {
+  if (typeof s !== 'string') {
+    if ('toString' in s) {
+      s = s.toString()
+    } else {
+      s = '???'
+    }
   }
-  return `[${name}]` + s
+  if (!s.startsWith('[')) {
+    return `[${name}] ${s as string}`
+  }
+  return `[${name}]${s as string}`
 }
 
 function wrapLogger (name: string, logger: Logger): Logger {

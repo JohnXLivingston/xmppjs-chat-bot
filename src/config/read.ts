@@ -150,7 +150,7 @@ async function readRoomConf (config: string | any, logger?: Logger): Promise<Roo
     }
     const domain = o.domain
 
-    const enabled = !!o.enabled
+    const enabled = !!(o.enabled ?? true)
     const handlers: ConfigHandler[] = []
     let nick: string | undefined
     if (('nick' in o) && (typeof o.nick === 'string')) {
@@ -167,8 +167,10 @@ async function readRoomConf (config: string | any, logger?: Logger): Promise<Roo
           logger.error('Missing id attribute for handler configuration')
           continue
         }
+        const handlerEnabled = !!(h.enabled ?? true)
         const handler: ConfigHandler = {
           id: h.id,
+          enabled: handlerEnabled,
           type: h.type,
           options: {}
         }
