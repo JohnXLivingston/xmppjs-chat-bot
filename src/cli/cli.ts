@@ -21,7 +21,8 @@ const runCommand = program.command('run')
 runCommand.description('Read one or more config files and execute the corresponding bot.')
 runCommand.requiredOption('-f, --file <files...>', 'one or more JSON files to parse')
 runCommand.option('-d, --debug', 'force the use @xmpp/debug')
-runCommand.option('-r, --reload', 'auto reload the bots if file are changing')
+runCommand.option('-l, --log-level <level>', 'set the log level')
+// runCommand.option('-r, --reload', 'auto reload the bots if file are changing')
 runCommand.action(async (options) => {
   console.log('Loading config files...')
   const bots: Map<string, Bot> = new Map()
@@ -67,6 +68,10 @@ runCommand.action(async (options) => {
 
       if (options.debug) {
         json.debug = true
+      }
+
+      if (options['log-level']) {
+        json.log_level = options['log-level']
       }
 
       const bot = await getBotFromConfig(json)

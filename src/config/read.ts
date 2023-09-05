@@ -24,6 +24,7 @@ interface ConfigBase {
   debug?: boolean
   name?: string
   logger?: 'ConsoleLogger'
+  log_level?: string
   rooms?: RoomConf[]
   handlers?: ConfigHandler[]
 }
@@ -88,6 +89,17 @@ async function getBotFromConfig (config: Config | string): Promise<Bot> {
     logger = new ColorConsoleLogger()
   }
   logger ??= new DefaultLogger()
+
+  if (config.log_level &&
+    (
+      config.log_level === 'debug' ||
+      config.log_level === 'info' ||
+      config.log_level === 'warn' ||
+      config.log_level === 'error'
+    )
+  ) {
+    logger.setLevel(config.log_level)
+  }
 
   const bot = new Bot(config.name ?? 'Bot', connection, logger)
   await bot.connect()
