@@ -14,13 +14,22 @@ declare interface Room {
     ((event: 'room_joined', listener: (user: RoomUser) => void) => this) &
     ((event: 'room_parted', listener: (user: RoomUser) => void) => this) &
     ((event: 'room_message', listener: (stanza: MessageStanza, fromUser: RoomUser) => void) => this) &
-    ((event: 'room_mentionned', listener: (stanza: MessageStanza, fromUser: RoomUser) => void) => this)
+    ((event: 'room_mentionned', listener: (stanza: MessageStanza, fromUser: RoomUser) => void) => this) &
+    ((event: 'room_command', listener: (
+      command: string, parameters: string[], stanza: MessageStanza, fromUser: RoomUser
+    ) => void) => this)
   )
   emit: (
     ((event: 'room_joined', user: RoomUser) => boolean) &
     ((event: 'room_parted', user: RoomUser) => boolean) &
     ((event: 'room_message', stanza: MessageStanza, fromUser: RoomUser) => boolean) &
-    ((event: 'room_mentionned', stanza: MessageStanza, fromUser: RoomUser) => boolean)
+    ((event: 'room_mentionned', stanza: MessageStanza, fromUser: RoomUser) => boolean) &
+    ((
+      event: 'room_command',
+      command: string, parameters: string[],
+      stanza: MessageStanza,
+      fromUser: RoomUser
+    ) => boolean)
   )
 }
 
@@ -261,6 +270,15 @@ class Room extends EventEmitter {
       return
     }
     this.emit('room_message', stanza, user)
+
+    // Is this a command? (message that starts with !)
+    if (body.startsWith('!')) {
+      const parameters = body.split(/\s+/)
+      const command = parameters.shift()?.substring(1)
+      if (command) {
+        this.emit('room_command', command, parameters, stanza, user)
+      }
+    }
 
     // I'm I mentionned?
     if (this.userJID) {
