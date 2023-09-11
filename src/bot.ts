@@ -73,10 +73,6 @@ export class Bot {
       this.rooms.forEach(room => room.reset())
     })
 
-    this.xmpp.on('offline', () => {
-      this.logger.info(`Stoppping process: ${this.botName} is now offline.`)
-    })
-
     await this.xmpp.start()
   }
 
