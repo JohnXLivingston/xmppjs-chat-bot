@@ -62,10 +62,10 @@ class MessageStanza extends Stanza {
   }
 
   /**
-   * return the message body as a string.
+   * return the message body content as a string.
    */
   public body (): string | null {
-    return this.xml.getChild('body')?.toString() ?? null
+    return this.xml.getChild('body')?.text() ?? null
   }
 
   /**
