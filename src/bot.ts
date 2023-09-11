@@ -69,8 +69,14 @@ export class Bot {
 
       this.address = address
 
-      // 'online' is emitted at reconnection, so we must reset rooms rosters
-      this.rooms.forEach(room => room.reset())
+      this.rooms.forEach(
+        room => {
+          // 'online' is emitted at reconnection, so we must reset rooms rosters
+          room.reset()
+          // We must also resend our presence stanza
+          room.join(room.myNick ?? this.botName).then(() => {}, () => {})
+        }
+      )
     })
 
     await this.xmpp.start()

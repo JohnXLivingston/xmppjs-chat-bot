@@ -53,11 +53,14 @@ class HandlerModerate extends Handler {
     if (typeof options !== 'object') { return }
 
     if (!('rules' in options)) { return }
-    const rules = options.rules
+    let rules = options.rules
 
     this.rules = []
     if (!Array.isArray(rules)) {
       // Just one RegExp
+      if (typeof rules === 'string') {
+        rules = new RegExp(rules) // can throw an exception if rules not valid
+      }
       if (!(rules instanceof RegExp)) {
         throw new Error('Invalid rules options')
       }
@@ -67,7 +70,10 @@ class HandlerModerate extends Handler {
       })
     } else {
       // Array<RegExp|Pattern>
-      for (const rule of rules) {
+      for (let rule of rules) {
+        if (typeof rule === 'string') {
+          rule = new RegExp(rule) // can throw an exception if rules not valid
+        }
         if (rule instanceof RegExp) {
           this.rules.push({
             name: rule.toString(),
@@ -76,7 +82,7 @@ class HandlerModerate extends Handler {
         } else if ((typeof rule === 'object') && rule.name && rule.regexp) {
           this.rules.push({
             name: rule.name,
-            regexp: rule.regexp,
+            regexp: (typeof rule.regexp === 'string') ? new RegExp(rule.regexp) : rule.regexp,
             reason: rule.reason
           })
         } else {
