@@ -1,5 +1,5 @@
 # Changelog
 
-## 1.0.0 (Not Released Yet)
+## 0.1.0
 
-* First stable version
+* Complete rewrite of the bot.
