@@ -91,7 +91,7 @@ class HandlerModerate extends Handler {
   }
 
   public stop (): void {
-    this.room.off('room_mentionned', this.roomMessage)
+    this.room.off('room_message', this.roomMessage)
   }
 }
 
