@@ -20,6 +20,7 @@ program
 const runCommand = program.command('run')
 runCommand.description('Read one or more config files and execute the corresponding bot.')
 runCommand.requiredOption('-f, --file <files...>', 'one or more JSON files to parse')
+runCommand.option('--room-conf-dir <directories...>', 'a directory containing room configuration JSON files')
 runCommand.option('-d, --debug', 'force the use @xmpp/debug')
 runCommand.option('-l, --log-level <level>', 'set the log level')
 // runCommand.option('-r, --reload', 'auto reload the bots if file are changing')
@@ -70,8 +71,8 @@ runCommand.action(async (options) => {
         json.debug = true
       }
 
-      if (options['log-level']) {
-        json.log_level = options['log-level']
+      if (options.logLevel) {
+        json.log_level = options.logLevel
       }
 
       const bot = await getBotFromConfig(json)
@@ -85,6 +86,15 @@ runCommand.action(async (options) => {
   for (const file of (options.file) ?? []) {
     const filePath = path.resolve(file)
     await loadFile(filePath)
+  }
+
+  if (options.roomConfDir) {
+    const dirs = Array.isArray(options.roomConfDir) ? options.roomConfDir : [options.roomConfDir]
+    for (const dir of dirs) {
+      bots.forEach(bot => {
+        bot.loadRoomConfDir(dir).then(() => {}, (reason) => console.error(reason))
+      })
+    }
   }
 })
 
