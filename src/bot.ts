@@ -91,9 +91,19 @@ export class Bot {
     for (const [roomId, room] of this.rooms) {
       this.logger.debug(`Leaving room ${roomId}...`)
       await room.detachHandlers()
-      await room.part()
+      // room.part can fail if the bot is not connected (for example), so we try/catch.
+      try {
+        await room.part()
+      } catch (err) {
+        this.logger.error(err as string)
+      }
     }
-    await this.xmpp.stop()
+    try {
+      // Stop can fail if the bot is not connected (for example), so we try/catch.
+      await this.xmpp.stop()
+    } catch (err) {
+      this.logger.error(err as string)
+    }
   }
 
   public async sendStanza (
