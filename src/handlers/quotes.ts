@@ -85,7 +85,7 @@ class HandlerQuotes extends HandlerQuotesBase {
  */
 class HandlerRandomQuotes extends HandlerQuotesBase {
   protected getQuoteTxt (): string | null {
-    const count = Math.floor(Math.random() * (this.quotes.length - 1))
+    const count = Math.round(Math.random() * (this.quotes.length - 1))
     if (count >= this.quotes.length) { return null }
     this.logger.info(`Emitting the random message number ${count}.`)
     return this.quotes[count]

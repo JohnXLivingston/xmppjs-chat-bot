@@ -36,7 +36,7 @@ class HandlerCommandSay extends HandlerCommand {
     _user: RoomUser
   ): void {
     // Getting a random message from this.quotes
-    let count = Math.floor(Math.random() * (this.quotes.length - 1))
+    let count = Math.round(Math.random() * (this.quotes.length - 1))
     if (count >= this.quotes.length) { count = 0 }
     this.logger.info(`Emitting the message number ${count}, responding to !${command}.`)
     const txt = this.quotes[count]
