@@ -11,7 +11,12 @@ It is meant to be as modular as possible.
 You can run the bot using the CLI:
 
 ```bash
-npx . run -f path/to/a/config/file.json
+# install the bot:
+mkdir xmppjs-chat-bot
+cd xmppjs-chat-bot
+npm install xmppjs-chat-bot
+# then run it:
+npx xmppjs-chat-bot run -f path/to/a/config/file.json
 ```
 
 There is no documentation for this file format yet.
