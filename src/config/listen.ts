@@ -10,6 +10,7 @@ import path from 'path'
  * the callback will automatically be called on any change, so that the bot can reload.
  * This function returns a callback that can be called to stop listening file changes.
  * Please note that the callback will also be called for each already existing files.
+ * Filenames must end with '.json'.
  * @param bot the bot
  * @param dir path to a directory
  * @param callback the callback to call when there is a file change
@@ -34,6 +35,10 @@ async function listenRoomConfDir (
   }
 
   const loadRoomConfFile = async (filepath: string): Promise<void> => {
+    if (!filepath.endsWith('.json')) {
+      logger.debug('Ignoring file ' + filepath + ', is not a .json file.')
+      return
+    }
     const stat = await fs.promises.stat(filepath)
     if (stat.isDirectory()) {
       logger.error(filepath + ' is a directory, can`t load as file')
