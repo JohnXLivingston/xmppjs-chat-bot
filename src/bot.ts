@@ -10,6 +10,9 @@ import { Room } from './room'
 import { listenRoomConfDir } from './config/listen'
 import { HandlersDirectory } from './handlers_directory'
 
+// Must require handlers, because each class must declare itself in the handlers directory
+require('./handlers')
+
 export class Bot {
   public readonly botName: string
   protected readonly xmpp: Connection
