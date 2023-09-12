@@ -13,6 +13,8 @@ Please respect the [code of conduct](./CODE_OF_CONDUCT.md) for any contribution 
 If you are using this bot, you can [open a discussion on github](https://github.com/JohnXLivingston/xmppjs-chat-bot/discussions),
 to let me know you are using it. So I can try to not break your usages.
 
+This bot was originally created to be part of the [Peertube livechat](https://github.com/JohnXLivingston/peertube-plugin-livechat/) project.
+
 ## Cli
 
 You can run the bot using the CLI:
@@ -204,4 +206,153 @@ For example, if you want the bot to leave a room, just edit the file and set `en
 
 The bot is composed of different handlers.
 
-TODO: document this format
+A handler is a javascript class that is meant to handle one type of interraction.
+It can listen events (for example to respond to messages), send messages, do moderation actions, ...
+
+In room configuration files, you can attach one or more handler to a room.
+
+Here is the handler configuration format:
+
+```json
+{
+  "type": "quotes",
+  "id": "quotator",
+  "enabled": true,
+  "options": {}
+}
+```
+
+Where:
+
+* `type` is the handler type. Each handler javascript class register itself with a type. For example the `"quotes"` handler can send some quotes at regular interval. See bellow for a list of builtin handlers, or how you can add your handlers.
+* `id`: a unique name for the handler instance in the room. This id is used when relaoding the configuration after a file change, to match loaded handler with the configuration one. You can use any string, but it must be unique per room.
+* `enabled`: optional, `true` or `false`. If `true`, the bot will load and start this handler, else it will be ignored or stopped. If not present, will be considered `true`.
+* `options`: optional. Handler specific options (see handler's documentation)
+
+## Builtin handlers
+
+Existing handlers source code is in the `src/handlers` folder.
+
+Each handler has options. These options are usually optionals, and default values are implemented.
+
+### Hello
+
+Handler that can send a message each time a user join's a room.
+
+Type name (to use in configuration files): `hello`.
+
+Options:
+
+* `txt`: the message to send. The placeholder `{{NICK}}` will be replaced by the joining user's nickname
+* `delay`: if not undefined, won't send message for users that were already here the last `delay` seconds.
+
+### Moderate
+
+Handler that can delete messages containing forbidden patterns.
+
+Type name (to use in configuration files): `moderate`.
+
+Options:
+
+* `rules`: one ore more moderation rules
+
+A moderation rule can be:
+
+* a string: it will be converted to a RegExp object (regular expression)
+* a single RegExp object
+* an mixed array of string,RegExp or "rule definition"
+
+A "rule definition" is an object like:
+
+```javascript
+{
+  name: "the_rule_name",
+  regexp: /^forbidden$/, // you can also provide a string that will be converted to RegExp
+  reason: "The optional text to display when a message is deleted"
+}
+```
+
+### Quotes and Random Quotes
+
+These handlers can send messages in a room at some time interval.
+The "Quotes" handler send them in the definition order (and loops when all messages were sent), and the "Random Quotes" handler sends them randomly.
+
+Type name (to use in configuration files): `quotes` and `quotes_random`.
+
+Options:
+
+* `quotes`: an array of strings (messages to send)
+* `delay`: a number representing the delay between two messages, in seconds (by default 10 seconds)
+
+Example:
+
+```javascript
+{
+  "quotes": [
+    "🎵🎶",
+    "🎵🎶 I'm just a bot, I'm just a bot in the world. 🎵🎶"
+  ],
+  "delay": 60 * 5 // 5 minutes
+}
+```
+
+### Respond
+
+This handler can send a message to the room when a user mentions the bot.
+
+Type name (to use in configuration files): `respond`
+
+Options:
+
+* `txt`: the text to respond with. You can use the `{{NICK}}` placeholder to insert the user's nickname.
+
+### Commands
+
+Commands handlers are handlers meant to respond to a command.
+A command is a message starting with a `!`. The command name is the string just after the `!`. A command can have parameters, separated by spaces.
+
+For example, in `!the_command x@muc.domain.tld 10`:
+
+* the command name is `the_command`
+* the command parameters are `x@muc.domain.tld` and `10`
+
+All command handler have these options:
+
+* `command`: a string, or array of string, with the command_name this handler must listen to
+
+#### Say Command
+
+The "Say" command handler can send a message when it's command is used.
+
+For example, you can setup this handler to respond to `!help`.
+
+Type name (to use in configuration files): `command_say`.
+
+Options:
+
+* `command`: a string, or array of string, with the command_name this handler must listen to
+* `quotes`: a string, or list of string representing the messages to send when the command is called
+
+If there are multiple quotes, a quote will be picked randomly each time.
+
+## Adding your own handler
+
+To implement your own handler, just create a javascript class that inherits and implements abstract class `Handler`.
+
+Then you can register this class, so it can be loaded from a configuration file, using `HandlersDirectory.singleton().register('your_handler_type', YourHandlerClass)`.
+
+Note: for now you can't use custom handlers with the CLI, you have to write your own code.
+
+Example:
+
+```javascript
+import { Handler, HandlersDirectory } from 'xmppjs-chat-bot'
+
+class MyHandler extends Handler {
+  /* implement the abstract class */
+}
+
+HandlersDirectory.singleton().register('my_handler', MyHandler)
+```
+
+Note: the documentation for how a handler can be implemented (existing events and methods) is not written yet. Just check existing handlers code.
