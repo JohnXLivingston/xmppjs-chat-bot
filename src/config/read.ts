@@ -21,7 +21,7 @@ interface RoomConf {
 }
 
 interface ConfigBase {
-  debug?: boolean
+  xmpp_debug?: boolean
   name?: string
   logger?: 'ConsoleLogger'
   log_level?: string
@@ -78,7 +78,7 @@ async function getBotFromConfig (config: Config | string): Promise<Bot> {
     throw new Error(`Invalid type '${(config as any).type as string}'`)
   }
 
-  if (config.debug) {
+  if (config.xmpp_debug) {
     debug(connection, true)
   }
 
