@@ -1,6 +1,7 @@
 import type { Node, Element } from '@xmpp/xml'
 import type { XMPPElementType } from './stanza'
-import { getBotFromConfig, type RoomConf } from './config/read'
+import type { RoomConf } from './config/read'
+import { getBotFromConfig } from './config/read'
 import { Stanza } from './stanza'
 import Connection from '@xmpp/connection'
 import { JID } from '@xmpp/jid'

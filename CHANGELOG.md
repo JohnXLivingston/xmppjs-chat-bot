@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+* Fix bad type import syntax, that breaks some builds.
+
 ## 0.2.0
 
 * Breaking change: Quotes delay are now in seconds.
