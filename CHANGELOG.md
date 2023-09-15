@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (Not Released Yet)
+## 0.2.0
 
 * Breaking change: Quotes delay are now in seconds.
 * Breaking change: Renaming global option `debug` to `xmpp_debug`.
