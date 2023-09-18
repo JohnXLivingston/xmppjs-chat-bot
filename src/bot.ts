@@ -207,7 +207,7 @@ export class Bot {
     this.logger.info('(re)Loading conf for room ' + roomJID + '...')
 
     if (!enabled) {
-      this.logger.debug('Room ' + roomJID + 'is disabled')
+      this.logger.debug('Room ' + roomJID + ' is disabled')
       // in case we are still in the room...
       if (this.rooms.has(roomJID)) {
         this.logger.info('Room ' + roomJID + ' disabled, Must leave room ' + roomJID)
