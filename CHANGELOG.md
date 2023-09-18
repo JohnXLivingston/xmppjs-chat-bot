@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+* Fix missing exported type Config.
+
 ## 0.2.1
 
 * Fix bad type import syntax, that breaks some builds.

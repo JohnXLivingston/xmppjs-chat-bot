@@ -209,5 +209,6 @@ async function readRoomConf (config: string | any, logger?: Logger): Promise<Roo
 export {
   getBotFromConfig,
   readRoomConf,
-  RoomConf
+  RoomConf,
+  Config
 }
