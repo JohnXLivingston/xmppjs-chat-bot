@@ -92,7 +92,12 @@ runCommand.action(async (options) => {
     const dirs = Array.isArray(options.roomConfDir) ? options.roomConfDir : [options.roomConfDir]
     for (const dir of dirs) {
       bots.forEach(bot => {
-        bot.loadRoomConfDir(dir).then(() => {}, (reason) => console.error(reason))
+        bot.waitOnline().then(
+          () => {
+            bot.loadRoomConfDir(dir).then(() => {}, (reason) => console.error(reason))
+          },
+          (reason) => console.error(reason)
+        )
       })
     }
   }

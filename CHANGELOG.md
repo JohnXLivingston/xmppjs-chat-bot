@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3
+
+* Fix the CLI connection process.
+* Adding bot.waitOnline() method.
+
 ## 0.2.2
 
 * Fix missing exported type Config.

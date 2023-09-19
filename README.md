@@ -109,6 +109,8 @@ These files can be loaded by using the appropriate CLI option, or in your code b
 Global configuration files are files containing some global options.
 You can load one or more such files.
 
+The bot automatically start connecting when the configuration file is loaded.
+
 Each file will create one bot instance.
 
 You can use multiple files, for example if you want to connect to multiple servers.
@@ -122,6 +124,10 @@ In your code:
 import { getBotFromConfig } from 'xmppjs-chat-bot'
 const json = {...} // load your file content in the `json` var
 const bot = await getBotFromConfig(json)
+
+// If you have to load other handler, or want to do specific actions,
+// you can wait the bot to be connected using:
+await bot.waitOnline()
 ```
 
 Here is the file format:

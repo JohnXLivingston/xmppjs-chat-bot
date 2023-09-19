@@ -112,6 +112,26 @@ export class Bot {
     }
   }
 
+  /**
+   * Returns a promise that resolve when the bot is connected and online.
+   * Note: if the bot is already connected, returns a revolved promise.
+   */
+  public async waitOnline (): Promise<void> {
+    if (this.xmpp.status === 'online') {
+      this.logger.debug('waitOnline: The bot is already online')
+      return Promise.resolve()
+    }
+
+    this.logger.debug('waitOnline: The bot is not online, waiting...')
+    const p = new Promise<void>(resolve => {
+      this.xmpp.once('online', () => {
+        this.logger.debug('waitOnline: online event triggered, waitOnline can resolve.')
+        resolve()
+      })
+    })
+    return p
+  }
+
   public async sendStanza (
     type: XMPPElementType,
     attrs: object,

@@ -82,7 +82,7 @@ async function getBotFromConfig (config: Config | string): Promise<Bot> {
     debug(connection, true)
   }
 
-  let logger
+  let logger: Logger
   if (config.logger === 'ConsoleLogger') {
     logger = new ConsoleLogger()
   } else if (config.logger === 'ColorConsoleLogger') {
@@ -102,31 +102,41 @@ async function getBotFromConfig (config: Config | string): Promise<Bot> {
   }
 
   const bot = new Bot(config.name ?? 'Bot', connection, logger)
-  await bot.connect()
-  if (!config.rooms) {
-    return bot
-  }
-  try {
-    if (!Array.isArray(config.rooms)) {
-      throw new Error('The room entry must be an array')
+
+  // Note: we must return the bot without waiting to connect.
+  // Elsewhere, the bot would be unstoppable (in the CLI for example) in case it can't connect.
+  bot.connect().then(
+    async () => {
+      config = config as Config
+      if (!config.rooms) {
+        return
+      }
+      try {
+        if (!Array.isArray(config.rooms)) {
+          throw new Error('The room entry must be an array')
+        }
+        for (const roomConfig of (config.rooms ?? [])) {
+          if (!roomConfig.domain || !roomConfig.local) {
+            throw new Error('Invalid room configuration')
+          }
+          const cleanedRoomConfig = await readRoomConf(roomConfig, logger)
+          if (!cleanedRoomConfig) {
+            throw new Error('Invalid room configuration')
+          }
+          // Now, merging global handlers into roomConfig.
+          if (config.handlers && Array.isArray(config.handlers) && config.handlers.length) {
+            cleanedRoomConfig.handlers = config.handlers.concat(cleanedRoomConfig.handlers)
+          }
+          await bot.loadRoomConf(cleanedRoomConfig)
+        }
+      } catch (err) {
+        bot.logger.error(err as string)
+      }
+    },
+    (err) => {
+      bot.logger.error(err as string)
     }
-    for (const roomConfig of (config.rooms ?? [])) {
-      if (!roomConfig.domain || !roomConfig.local) {
-        throw new Error('Invalid room configuration')
-      }
-      const cleanedRoomConfig = await readRoomConf(roomConfig, logger)
-      if (!cleanedRoomConfig) {
-        throw new Error('Invalid room configuration')
-      }
-      // Now, merging global handlers into roomConfig.
-      if (config.handlers && Array.isArray(config.handlers) && config.handlers.length) {
-        cleanedRoomConfig.handlers = config.handlers.concat(cleanedRoomConfig.handlers)
-      }
-      await bot.loadRoomConf(cleanedRoomConfig)
-    }
-  } catch (err) {
-    logger.error(err as string)
-  }
+  )
   return bot
 }
 
