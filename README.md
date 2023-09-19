@@ -362,3 +362,10 @@ HandlersDirectory.singleton().register('my_handler', MyHandler)
 ```
 
 Note: the documentation for how a handler can be implemented (existing events and methods) is not written yet. Just check existing handlers code.
+
+## Troubleshooting
+
+### Self-signed certificates
+
+If your XMPP server uses self-signed certificates, you have to set the following env var: `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+See [https://github.com/xmppjs/xmpp.js/issues/598](https://github.com/xmppjs/xmpp.js/issues/598).
