@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+
+* Fix CLI exit.
+
 ## 0.2.3
 
 * Fix the CLI connection process.

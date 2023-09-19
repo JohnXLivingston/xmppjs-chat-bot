@@ -33,13 +33,32 @@ runCommand.action(async (options) => {
     process.on(sig, () => {
       console.info('Receiving signal: ' + sig)
       console.info('Shutdown...')
+      const promises: Array<Promise<any>> = []
       bots.forEach(bot => {
         console.info('Stopping the bot ' + bot.botName + '...')
-        bot.disconnect().then(() => {}, (err) => {
-          console.error(`Error when stopping the bot ${bot.botName}: ${err as string}`)
+        const p = new Promise<void>(resolve => {
+          bot.disconnect().then(() => {}, (err) => {
+            console.error(`Error when stopping the bot ${bot.botName}: ${err as string}`)
+          }).finally(() => resolve())
         })
+        promises.push(p)
       })
       bots.clear()
+
+      console.info('Waiting all bots to disconnect...')
+      Promise.all(promises).then(
+        () => {},
+        () => {}
+      ).finally(() => {
+        console.info('We can now exit.')
+        process.exit()
+      })
+
+      // Just in case, we also set a max timeout
+      setTimeout(() => {
+        console.error('It seems the bots have not disconnected within 1000ms, exiting anyway.')
+        process.exit(1)
+      }, 1000)
     })
   })
 
