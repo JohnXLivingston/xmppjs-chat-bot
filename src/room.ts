@@ -8,6 +8,8 @@ import EventEmitter from 'events'
 import { JID } from '@xmpp/jid'
 import xml from '@xmpp/xml'
 import { RoomUser } from './user'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const xmppid = require('@xmpp/id')
 
 declare interface Room {
   on: (
@@ -173,11 +175,14 @@ class Room extends EventEmitter {
         ...moderateChildren
       )
     )
+    // FIXME: use https://github.com/xmppjs/xmpp.js/blob/main/packages/iq/caller.js
+    //      instead of hard coding a sendStanza.
     await this.bot.sendStanza(
       'iq',
       {
         type: 'set',
-        to: this.roomJID.toString()
+        to: this.roomJID.toString(),
+        id: xmppid()
       },
       applyTo
     )

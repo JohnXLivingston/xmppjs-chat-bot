@@ -137,9 +137,11 @@ export class Bot {
     attrs: object,
     ...children: Node[]
   ): Promise<void> {
-    attrs = Object.assign({
-      from: this.address?.toString()
-    }, attrs)
+    if (type !== 'iq') {
+      attrs = Object.assign({
+        from: this.address?.toString()
+      }, attrs)
+    }
 
     const stanza = xml(type, attrs, ...children)
     this.logger.debug('stanza to emit: ' + stanza.toString())

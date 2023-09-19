@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5
+
+* Fix message moderation, when not used as a component.
+
 ## 0.2.4
 
 * Fix CLI exit.
