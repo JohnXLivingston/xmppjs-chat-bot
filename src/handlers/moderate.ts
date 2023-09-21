@@ -15,6 +15,7 @@ interface Rule {
 class HandlerModerate extends Handler {
   private readonly roomMessage
   protected rules: Rule[]
+  protected applyToModerators: boolean = false
 
   /**
    * @param room
@@ -37,7 +38,7 @@ class HandlerModerate extends Handler {
         for (const regexp of regexps) {
           if (regexp.test(body)) {
             this.logger.debug('Message match following rule: ' + rule.name)
-            if (fromUser.isModerator()) {
+            if (!this.applyToModerators && fromUser.isModerator()) {
               this.logger.debug('Ignoring the moderation rule ' + rule.name + ', because the user is moderator.')
               continue
             }
@@ -51,6 +52,10 @@ class HandlerModerate extends Handler {
 
   public loadOptions (options: any): void {
     if (typeof options !== 'object') { return }
+
+    if (('applyToModerators' in options) && (typeof options.applyToModerators === 'boolean')) {
+      this.applyToModerators = options.applyToModerators
+    }
 
     if (!('rules' in options)) { return }
     let rules = options.rules

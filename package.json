@@ -1,6 +1,6 @@
 {
   "name": "xmppjs-chat-bot",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Server-side XMPP chat bot",
   "engines": {
     "node": ">= 14.4.0"

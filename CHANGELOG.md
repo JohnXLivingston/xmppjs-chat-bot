@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.6
+
+* Moderate handler: option to also apply to moderators.
+
 ## 0.2.5
 
 * Fix message moderation, when not used as a component.

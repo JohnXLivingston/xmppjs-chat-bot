@@ -261,6 +261,7 @@ Type name (to use in configuration files): `moderate`.
 Options:
 
 * `rules`: one ore more moderation rules
+* `applyToModerators`: by default, moderator's messages will not be moderated, unless you set this option to true
 
 A moderation rule can be:
 
