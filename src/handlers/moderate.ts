@@ -15,7 +15,7 @@ interface Rule {
 class HandlerModerate extends Handler {
   private readonly roomMessage
   protected rules: Rule[]
-  protected applyToModerators: boolean = false
+  protected applyToModerators: boolean
 
   /**
    * @param room
@@ -28,6 +28,7 @@ class HandlerModerate extends Handler {
   ) {
     super(id, room, options)
     this.rules ??= []
+    this.applyToModerators ??= false
 
     this.roomMessage = (stanza: MessageStanza, fromUser: RoomUser): void => {
       const body = stanza.body()?.toString() ?? ''

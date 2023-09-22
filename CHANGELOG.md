@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.7
+
+* Fix moderate handler applyToModerators option on startup.
+
 ## 0.2.6
 
 * Moderate handler: option to also apply to moderators.
