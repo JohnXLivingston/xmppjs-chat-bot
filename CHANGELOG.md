@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.8
+
+* Moderate handler: string regexp are made case insensitive (/i modifier).
+
 ## 0.2.7
 
 * Fix moderate handler applyToModerators option on startup.

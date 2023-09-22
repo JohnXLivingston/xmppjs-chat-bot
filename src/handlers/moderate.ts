@@ -65,7 +65,7 @@ class HandlerModerate extends Handler {
     if (!Array.isArray(rules)) {
       // Just one RegExp
       if (typeof rules === 'string') {
-        rules = new RegExp(rules) // can throw an exception if rules not valid
+        rules = new RegExp(rules, 'i') // can throw an exception if rules not valid
       }
       if (!(rules instanceof RegExp)) {
         throw new Error('Invalid rules options')
@@ -78,7 +78,7 @@ class HandlerModerate extends Handler {
       // Array<RegExp|Pattern>
       for (let rule of rules) {
         if (typeof rule === 'string') {
-          rule = new RegExp(rule) // can throw an exception if rules not valid
+          rule = new RegExp(rule, 'i') // can throw an exception if rules not valid
         }
         if (rule instanceof RegExp) {
           this.rules.push({
@@ -88,7 +88,7 @@ class HandlerModerate extends Handler {
         } else if ((typeof rule === 'object') && rule.name && rule.regexp) {
           this.rules.push({
             name: rule.name,
-            regexp: (typeof rule.regexp === 'string') ? new RegExp(rule.regexp) : rule.regexp,
+            regexp: (typeof rule.regexp === 'string') ? new RegExp(rule.regexp, 'i') : rule.regexp,
             reason: rule.reason
           })
         } else {
