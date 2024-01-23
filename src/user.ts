@@ -34,7 +34,7 @@ export class RoomUser {
    */
   public update (presence: PresenceStanza): boolean {
     if (presence.from?.toString() !== this.jid.toString()) {
-      // FIXME: handle nickname changes!
+      // FIXME: handle nickname changes! (must check occupant-id?)
       this.room.logger.error('This presence stanza is not for the same user.')
       return false
     }
