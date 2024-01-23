@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.9
+
+* Room: new getOnlineUsers method.
+
 ## 0.2.8
 
 * Moderate handler: string regexp are made case insensitive (/i modifier).

@@ -75,6 +75,20 @@ class Room extends EventEmitter {
     return count
   }
 
+  /**
+   * Returns online users list.
+   * @returns online users list
+   */
+  public getOnlineUsers (): RoomUser[] {
+    const r: RoomUser[] = []
+    this.roster.forEach(user => {
+      if (user.isOnline()) {
+        r.push(user)
+      }
+    })
+    return r
+  }
+
   public get myNick (): string | undefined {
     return this.userJID?.getResource()
   }
