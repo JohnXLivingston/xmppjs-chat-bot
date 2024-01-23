@@ -3,7 +3,8 @@
 ## ??? (Not Released Yet)
 
 * Handling nickname changes (first experimental version). New room_nickname_changed event.
-* Exporting NickNameChangeHandler
+* Exporting NickNameChangeHandler.
+* New room_roster_initialized event.
 
 ## 0.2.10
 

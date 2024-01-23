@@ -16,6 +16,7 @@ declare interface Room {
     ((event: 'room_joined', listener: (user: RoomUser) => void) => this) &
     ((event: 'room_parted', listener: (user: RoomUser) => void) => this) &
     ((event: 'room_nick_changed', listener: (user: RoomUser, previousJID: JID) => void) => this) &
+    ((event: 'room_roster_initialized', listener: (OnlineUsers: RoomUser[]) => void) => this) &
     ((event: 'room_message', listener: (stanza: MessageStanza, fromUser: RoomUser) => void) => this) &
     ((event: 'room_mentionned', listener: (stanza: MessageStanza, fromUser: RoomUser) => void) => this) &
     ((event: 'room_command', listener: (
@@ -26,6 +27,7 @@ declare interface Room {
     ((event: 'room_joined', user: RoomUser) => boolean) &
     ((event: 'room_parted', user: RoomUser) => boolean) &
     ((event: 'room_nick_changed', user: RoomUser, previousJID: JID) => boolean) &
+    ((event: 'room_roster_initialized', onlineUsers: RoomUser[]) => boolean) &
     ((event: 'room_message', stanza: MessageStanza, fromUser: RoomUser) => boolean) &
     ((event: 'room_mentionned', stanza: MessageStanza, fromUser: RoomUser) => boolean) &
     ((
@@ -265,8 +267,16 @@ class Room extends EventEmitter {
     // Updating userRoom object, and emitting events if state changed.
     const updated = user.update(stanza)
     if (user.isMe()) {
+      const previousState = this.state
       // updating room state
       this.state = user.isOnline() ? 'online' : 'offline'
+
+      if (previousState !== 'online' && this.state === 'online') {
+        // When joining a MUC, the presence stanza for the current user is sent after all other occupant.
+        // So, when receiving it, we are sure the roster is initiliazed.
+        // See https://xmpp.org/extensions/xep-0045.html#order
+        this.emit('room_roster_initialized', this.getOnlineUsers())
+      }
     }
 
     if (updated && this.isOnline()) {
