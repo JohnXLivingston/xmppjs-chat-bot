@@ -3,6 +3,7 @@
 ## 0.2.9
 
 * Room: new getOnlineUsers method.
+* npm dependencies security updates.
 
 ## 0.2.8
 
