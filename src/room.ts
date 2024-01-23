@@ -258,14 +258,21 @@ class Room extends EventEmitter {
       return
     }
 
+    let updated: boolean = false
+
     if (!user) {
       this.logger.debug('[Room:receivePresenceStanza] user was not in roster, creating it')
       user = new RoomUser(this, stanza)
       this.roster.set(from.toString(), user)
+      if (this.isOnline()) {
+        // must skip if !room.isOnline, to ignore initials presence messages
+        updated = true
+      }
     }
 
     // Updating userRoom object, and emitting events if state changed.
-    const updated = user.update(stanza)
+    if (user.update(stanza)) { updated = true }
+
     if (user.isMe()) {
       const previousState = this.state
       // updating room state
