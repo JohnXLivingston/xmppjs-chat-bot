@@ -1,6 +1,6 @@
 # Changelog
 
-## ??? (Not Released Yet)
+## 0.3.0
 
 * Handling nickname changes (first experimental version). New room_nickname_changed event.
 * Exporting NickNameChangeHandler.
