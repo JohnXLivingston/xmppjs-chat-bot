@@ -15,6 +15,7 @@ declare interface Room {
   on: (
     ((event: 'room_joined', listener: (user: RoomUser) => void) => this) &
     ((event: 'room_parted', listener: (user: RoomUser) => void) => this) &
+    ((event: 'room_nick_changed', listener: (user: RoomUser, previousJID: JID) => void) => this) &
     ((event: 'room_message', listener: (stanza: MessageStanza, fromUser: RoomUser) => void) => this) &
     ((event: 'room_mentionned', listener: (stanza: MessageStanza, fromUser: RoomUser) => void) => this) &
     ((event: 'room_command', listener: (
@@ -24,6 +25,7 @@ declare interface Room {
   emit: (
     ((event: 'room_joined', user: RoomUser) => boolean) &
     ((event: 'room_parted', user: RoomUser) => boolean) &
+    ((event: 'room_nick_changed', user: RoomUser, previousJID: JID) => boolean) &
     ((event: 'room_message', stanza: MessageStanza, fromUser: RoomUser) => boolean) &
     ((event: 'room_mentionned', stanza: MessageStanza, fromUser: RoomUser) => boolean) &
     ((
@@ -232,7 +234,28 @@ class Room extends EventEmitter {
       return
     }
 
+    // FIXME: should user occupant-id when available?
     let user: RoomUser | undefined = this.roster.get(from.toString())
+
+    const newNickname = stanza.isNickNameChange()
+    if (newNickname !== false) {
+      if (!user) {
+        this.logger.error(
+          '[Room:receivePresenceStanza] Received a nickname change stanza, but the user is not known. Ignoring.'
+        )
+        return
+      }
+      this.logger.debug('[Room:receivePresenceStanza] Detecting a nickname change, updating the roster')
+      const oldJID = new JID(user.jid.local, user.jid.domain, user.jid.resource)
+      this.roster.delete(from.toString())
+      user.updateNick(newNickname)
+      this.roster.set(user.jid.toString(), user)
+      // Note: there will be another presence stanza just after, that will update the online status if needed.
+      // See https://xmpp.org/extensions/xep-0045.html#changenick
+      this.emit('room_nick_changed', user, oldJID)
+      return
+    }
+
     if (!user) {
       this.logger.debug('[Room:receivePresenceStanza] user was not in roster, creating it')
       user = new RoomUser(this, stanza)
@@ -245,6 +268,7 @@ class Room extends EventEmitter {
       // updating room state
       this.state = user.isOnline() ? 'online' : 'offline'
     }
+
     if (updated && this.isOnline()) {
       // must skip if !room.isOnline, to ignore initials presence messages
       if (user.isOnline()) {

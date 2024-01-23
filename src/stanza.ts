@@ -104,6 +104,8 @@ class PresenceStanza extends Stanza {
   private readonly _isMe: boolean
   private readonly _Role: string | undefined
   private readonly _Affiliation: string | undefined
+  private readonly _IsNickNameChange: boolean = false
+  private readonly _NewNickname: string | undefined
 
   constructor (xml: Element) {
     super(xml)
@@ -115,6 +117,9 @@ class PresenceStanza extends Stanza {
         if (status.attrs.code === '110') {
           this._isMe = true
         }
+        if (status.attrs.code === '303') {
+          this._IsNickNameChange = true
+        }
       }
       const itemsElems = x.getChildren('item')
       for (const item of itemsElems) {
@@ -123,6 +128,9 @@ class PresenceStanza extends Stanza {
         }
         if (item.attrs.affiliation) {
           this._Affiliation = item.attrs.affiliation
+        }
+        if (this._IsNickNameChange && item.attrs.nick) {
+          this._NewNickname = item.attrs.nick
         }
       }
     }
@@ -150,6 +158,18 @@ class PresenceStanza extends Stanza {
    */
   public affiliation (): string | undefined {
     return this._Affiliation
+  }
+
+  /**
+   * Indicate if the presence stanza is a nickname change.
+   * If yes, returns the new nickname.
+   * Else returns false.
+   */
+  public isNickNameChange (): string | false {
+    if (!this._IsNickNameChange || this._NewNickname === undefined) {
+      return false
+    }
+    return this._NewNickname
   }
 }
 

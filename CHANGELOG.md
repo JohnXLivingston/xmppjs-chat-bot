@@ -1,5 +1,10 @@
 # Changelog
 
+## ??? (Not Released Yet)
+
+* Handling nickname changes (first experimental version). New room_nickname_changed event.
+* Exporting NickNameChangeHandler
+
 ## 0.2.10
 
 * Fix NPM build
