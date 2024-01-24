@@ -16,6 +16,7 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "lint": "eslint ./src",
     "test": "npm run lint && echo \"Error: no test specified\" && exit 1"
   },
