@@ -2,6 +2,7 @@
 import type { Bot } from '../bot'
 import { Command } from 'commander'
 import { getBotFromConfig } from '../config/read'
+import { HandlersDirectory } from '../handlers_directory'
 import path from 'path'
 import fs from 'fs'
 
@@ -21,10 +22,22 @@ const runCommand = program.command('run')
 runCommand.description('Read one or more config files and execute the corresponding bot.')
 runCommand.requiredOption('-f, --file <files...>', 'one or more JSON files to parse')
 runCommand.option('--room-conf-dir <directories...>', 'a directory containing room configuration JSON files')
+runCommand.option(
+  '--load-handlers <files...>',
+  'one or more external handler to load. Files must be Javascript modules, ' +
+  'exporting a "registerHandlers" function. See documentation for more information.'
+)
 runCommand.option('-d, --debug', 'force the use @xmpp/debug')
 runCommand.option('-l, --log-level <level>', 'set the log level')
 // runCommand.option('-r, --reload', 'auto reload the bots if file are changing')
 runCommand.action(async (options) => {
+  if (options.loadHandlers && options.loadHandlers.length > 0) {
+    console.log('Loading additional handlers...')
+    for (const handlersFilePath of options.loadHandlers) {
+      await HandlersDirectory.singleton().registerFromFile(handlersFilePath)
+    }
+  }
+
   console.log('Loading config files...')
   const bots: Map<string, Bot> = new Map()
 

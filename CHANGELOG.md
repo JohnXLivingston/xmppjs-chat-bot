@@ -1,5 +1,9 @@
 # Changelog
 
+## ??? (Not Released Yet)
+
+* New CLI option to load handlers by file path.
+
 ## 0.3.0
 
 * Handling nickname changes (first experimental version). New room_nickname_changed event.

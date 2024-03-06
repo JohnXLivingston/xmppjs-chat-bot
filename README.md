@@ -344,6 +344,8 @@ If there are multiple quotes, a quote will be picked randomly each time.
 
 ## Adding your own handler
 
+### In custom code
+
 To implement your own handler, just create a javascript class that inherits and implements abstract class `Handler`.
 
 Then you can register this class, so it can be loaded from a configuration file, using `HandlersDirectory.singleton().register('your_handler_type', YourHandlerClass)`.
@@ -364,9 +366,51 @@ HandlersDirectory.singleton().register('my_handler', MyHandler)
 
 Note: the documentation for how a handler can be implemented (existing events and methods) is not written yet. Just check existing handlers code.
 
+### Loading handlers from an external Javascript file
+
+You can also write a Javascript module that exports a `registerHandlers` function, taking the `handlersDirectory` singleton object as argument.
+Then call `handlersDirectory.registerFromFile(filePath)` to load your extra code.
+
+Here is an example of such javascript file:
+
+```javascript
+async function registerHandlers (directory) {
+  class MyHandler extends directory.HandlerBaseClass {
+    constructor () {
+      super(...arguments)
+      // add some custom code
+    }
+    loadOptions (options) {}
+    start () {
+      // add some custom code
+    }
+    stop () {
+      // add some custom code
+    }
+  }
+
+  directory.register('my_handler', MyHandler)
+}
+
+exports.registerHandlers = registerHandlers
+```
+
+Note: as a conveniance, you can use `directory.HandlerBaseClass` to get the base class for handlers. So you don't have to import xmppjs-chat-bot in your custom file (which could make some trouble if your javascript file is not in the correct folder).
+
+**Important note**: don't load files that you don't trust. Don't load files that are writable by untrusted users. Otherwise, you can execute some evil code.
+
+There is an option to load handlers from files when you are using the CLI:
+
+```bash
+npx xmppjs-chat-bot run --load-handlers path/to/a/javascript/file.js
+```
+
+For now, there is no way to load handlers from configuration file. It could be a security issue, if you don't set correct write rights on your configuration files.
+
 ## Troubleshooting
 
 ### Self-signed certificates
 
 If your XMPP server uses self-signed certificates, you have to set the following env var: `NODE_TLS_REJECT_UNAUTHORIZED=0`.
-See [https://github.com/xmppjs/xmpp.js/issues/598](https://github.com/xmppjs/xmpp.js/issues/598).
+See [https://github.com/xmppjs/xmpp.js/issues/598](https://github.com/xmppjs/xmpp.js/iss
+ues/598).
