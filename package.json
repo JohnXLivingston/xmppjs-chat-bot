@@ -1,6 +1,6 @@
 {
   "name": "xmppjs-chat-bot",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Server-side XMPP chat bot",
   "engines": {
     "node": ">= 14.4.0"
@@ -16,7 +16,8 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "prepare": "npm run build",
+    "clean": "rm -rf lib/*",
+    "prepare": "npm run clean && npm run build",
     "lint": "eslint ./src",
     "test": "npm run lint && echo \"Error: no test specified\" && exit 1"
   },

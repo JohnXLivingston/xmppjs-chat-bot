@@ -1,6 +1,6 @@
 # Changelog
 
-## ??? (Not Released Yet)
+## 0.4.0 (Not Released Yet)
 
 * New CLI option to load handlers by file path.
 
