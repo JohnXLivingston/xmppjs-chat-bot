@@ -396,6 +396,7 @@ exports.registerHandlers = registerHandlers
 ```
 
 Note: as a conveniance, you can use `directory.HandlerBaseClass` to get the base class for handlers. So you don't have to import xmppjs-chat-bot in your custom file (which could make some trouble if your javascript file is not in the correct folder).
+If you don't use the `directory` object to make your imports, just be sure that the used xmppjs-chat-bot lib will be the same as the running code.
 
 **Important note**: don't load files that you don't trust. Don't load files that are writable by untrusted users. Otherwise, you can execute some evil code.
 
