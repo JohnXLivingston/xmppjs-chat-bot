@@ -41,21 +41,21 @@
     "https://liberapay.com/JohnLivingston/"
   ],
   "devDependencies": {
-    "@tsconfig/node14": "^14.1.0",
-    "@types/node": "^14.18.0",
-    "@types/xmpp__client": "^0.13.0",
-    "@types/xmpp__component": "^0.13.0",
-    "@types/xmpp__connection": "^0.13.0",
-    "@types/xmpp__debug": "^0.13.0",
-    "@types/xmpp__id": "^0.13.0",
-    "@types/xmpp__jid": "^1.3.3",
-    "@types/xmpp__xml": "^0.13.1",
+    "@tsconfig/node14": "^14.1.2",
+    "@types/node": "^14.18.63",
+    "@types/xmpp__client": "^0.13.3",
+    "@types/xmpp__component": "^0.13.3",
+    "@types/xmpp__connection": "^0.13.3",
+    "@types/xmpp__debug": "^0.13.3",
+    "@types/xmpp__id": "^0.13.2",
+    "@types/xmpp__jid": "^1.3.5",
+    "@types/xmpp__xml": "^0.13.4",
     "@typescript-eslint/eslint-plugin": "^4.29.0",
     "@typescript-eslint/parser": "^4.29.0",
     "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-config-standard-with-typescript": "^20.0.0",
-    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-import": "^2.30.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.1.1",
     "eslint-plugin-standard": "^5.0.0",
@@ -68,6 +68,6 @@
     "@xmpp/id": "^0.13.1",
     "@xmpp/jid": "^0.13.1",
     "@xmpp/xml": "^0.13.1",
-    "commander": "^11.0.0"
+    "commander": "^11.1.0"
   }
 }

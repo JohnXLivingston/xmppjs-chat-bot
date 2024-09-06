@@ -3,6 +3,8 @@
 ## 0.4.0 (Not Released Yet)
 
 * New CLI option to load handlers by file path.
+* New 'modifiers' option for Moderate handler regular expressions.
+* Update dependencies.
 
 ## 0.3.0
 

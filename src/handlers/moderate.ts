@@ -86,9 +86,12 @@ class HandlerModerate extends Handler {
             regexp: rule
           })
         } else if ((typeof rule === 'object') && rule.name && rule.regexp) {
+          const modifiers = (typeof rule.modifiers === 'string') ? rule.modifiers : undefined
           this.rules.push({
             name: rule.name,
-            regexp: (typeof rule.regexp === 'string') ? new RegExp(rule.regexp, 'i') : rule.regexp,
+            regexp: ((typeof rule.regexp === 'string') || modifiers !== undefined)
+              ? new RegExp(rule.regexp, modifiers ?? 'i')
+              : rule.regexp,
             reason: rule.reason
           })
         } else {

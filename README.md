@@ -265,7 +265,7 @@ Options:
 
 A moderation rule can be:
 
-* a string: it will be converted to a RegExp object (regular expression)
+* a string: it will be converted to a RegExp object (regular expression), with a `/i` modifier.
 * a single RegExp object
 * an mixed array of string,RegExp or "rule definition"
 
@@ -274,9 +274,21 @@ A "rule definition" is an object like:
 ```javascript
 {
   name: "the_rule_name",
-  regexp: /^forbidden$/, // you can also provide a string that will be converted to RegExp
+  regexp: /^forbidden$/,
   reason: "The optional text to display when a message is deleted"
-}
+},
+{
+  name: "the_rule_name",
+  regexp: "^forbidden$", // will give /^forbidden$/i
+  reason: "The optional text to display when a message is deleted"
+},
+{
+  name: "the_rule_name",
+  regexp: "^forbidden$",
+  modifiers: "imu", // you can specify modifiers
+  reason: "The optional text to display when a message is deleted"
+},
+
 ```
 
 ### Quotes and Random Quotes
