@@ -354,6 +354,29 @@ Options:
 
 If there are multiple quotes, a quote will be picked randomly each time.
 
+### No Duplicate
+
+This handler moderates duplicate messages.
+That means, if a user sends two similar messages in a given interval, the last one will be deleted.
+
+Type name (to use in configuration files): `no-duplicate`.
+
+Options:
+
+* `delay`: the delay, in seconds, for which the user can't send the same message (by default 60 seconds)
+* `reason`: "The optional text to display when a message is deleted"
+* `applyToModerators`: by default, moderator's messages will not be moderated, unless you set this option to true
+
+Example:
+
+```javascript
+{
+  "delay": 100,
+  "reason": "No duplicate please!",
+  "applyToModerators": true
+}
+```
+
 ## Adding your own handler
 
 ### In custom code
