@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 (Not Released Yet)
+## 0.5.0
 
 * New No-Duplicate handler, to prevent users from sending duplicate messages.
 * Fix Quotes handler when passing undefined as delay.
