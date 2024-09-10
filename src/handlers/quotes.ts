@@ -2,6 +2,8 @@ import type { Room } from '../room'
 import { Handler } from './abstract'
 import { HandlersDirectory } from '../handlers_directory'
 
+const DEFAULT_DELAY_SECONDS = 10
+
 abstract class HandlerQuotesBase extends Handler {
   protected timeout: NodeJS.Timeout | undefined
   protected quotes: string[]
@@ -10,7 +12,7 @@ abstract class HandlerQuotesBase extends Handler {
   constructor (id: string, room: Room, options: any) {
     super(id, room, options)
     this.quotes ??= []
-    this.quoteDelay ??= 10 * 1000
+    this.quoteDelay ??= DEFAULT_DELAY_SECONDS * 1000
   }
 
   public loadOptions (options: any): void {
@@ -24,8 +26,9 @@ abstract class HandlerQuotesBase extends Handler {
       }
     }
     if (('delay' in options) && (options.delay === undefined || (typeof options.delay === 'number'))) {
-      if (this.quoteDelay !== options.delay) {
-        this.quoteDelay = options.delay * 1000 // Converting to seconds
+      const newDelay = (options.delay ?? DEFAULT_DELAY_SECONDS) * 1000 // Converting to seconds
+      if (this.quoteDelay !== newDelay) {
+        this.quoteDelay = newDelay
         if (this.timeout) {
           this.logger.info('The quote delay has changed, we must stop and start the handler again')
           // already started, must restart

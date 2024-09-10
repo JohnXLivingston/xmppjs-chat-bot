@@ -62,6 +62,13 @@ class MessageStanza extends Stanza {
   }
 
   /**
+   * Returns the message occupant id, if available.
+   */
+  public occupantId (): string | null {
+    return this.xml.getChild('occupant-id')?.attrs.id ?? null
+  }
+
+  /**
    * return the message body content as a string.
    */
   public body (): string | null {

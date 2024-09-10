@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 (Not Released Yet)
+
+* New No-Duplicate handler, to prevent users from sending duplicate messages.
+* Fix Quotes handler when passing undefined as delay.
+* Fix Quotes handler delay refresh condition.
+
 ## 0.4.0
 
 * New CLI option to load handlers by file path.
