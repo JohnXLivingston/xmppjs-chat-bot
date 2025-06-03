@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0 (Not Released Yet)
+
+* Using RE2 RegExp engine to protect against ReDOS attacks. Regular RegExp object is still available using an option.
+* Updating npm dependencies.
+
 ## 0.5.0
 
 * New No-Duplicate handler, to prevent users from sending duplicate messages.

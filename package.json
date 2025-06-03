@@ -43,6 +43,7 @@
   "devDependencies": {
     "@tsconfig/node14": "^14.1.2",
     "@types/node": "^14.18.63",
+    "@types/re2": "^1.10.0",
     "@types/xmpp__client": "^0.13.3",
     "@types/xmpp__component": "^0.13.3",
     "@types/xmpp__connection": "^0.13.3",
@@ -68,6 +69,7 @@
     "@xmpp/id": "^0.13.1",
     "@xmpp/jid": "^0.13.1",
     "@xmpp/xml": "^0.13.1",
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "re2": "^1.22.1"
   }
 }
