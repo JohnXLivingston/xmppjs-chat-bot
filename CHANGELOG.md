@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0 (Not Released Yet)
+## 0.6.0
 
 * Using RE2 RegExp engine to protect against ReDOS attacks. Regular RegExp object is still available using an option.
 * Updating npm dependencies.
