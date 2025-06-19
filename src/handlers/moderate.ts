@@ -1,10 +1,7 @@
-/* eslint-disable new-cap *//* (because of RE2.default) */
-
 import type { Room, RoomUser } from '../room'
 import type { MessageStanza } from '../stanza'
 import { Handler } from './abstract'
 import { HandlersDirectory } from '../handlers_directory'
-import * as RE2 from 're2'
 
 interface Rule {
   name: string
@@ -68,57 +65,33 @@ class HandlerModerate extends Handler {
     if (!Array.isArray(rules)) {
       // Just one RegExp
       if (typeof rules === 'string') {
-        rules = new RE2.default(rules, 'i') // can throw an exception if rules not valid
+        rules = new RegExp(rules, 'i') // can throw an exception if rules not valid
       }
-      if (!(rules instanceof RE2.default)) {
+      if (!(rules instanceof RegExp)) {
         throw new Error('Invalid rules options')
       }
       this.rules.push({
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         name: rules.toString(),
         regexp: rules
       })
     } else {
-      // Array<RegExp|RE2|Pattern>
+      // Array<RegExp|Pattern>
       for (let rule of rules) {
         if (typeof rule === 'string') {
-          rule = new RE2.default(rule, 'i') // can throw an exception if rules not valid
+          rule = new RegExp(rule, 'i') // can throw an exception if rules not valid
         }
-        if ((rule instanceof RE2.default) || rule instanceof RegExp) {
+        if (rule instanceof RegExp) {
           this.rules.push({
             name: rule.toString(),
             regexp: rule
           })
         } else if ((typeof rule === 'object') && rule.name && rule.regexp) {
           const modifiers = (typeof rule.modifiers === 'string') ? rule.modifiers : undefined
-
-          let r: RE2 | RegExp
-          if ((typeof rule.regexp === 'string') || modifiers !== undefined) {
-            // Note: if there are modifiers, we must recreate the regexp to be sure it applies.
-            r = (rule.regexp_engine === 'regexp')
-              ? new RegExp(rule.regexp, modifiers ?? 'i')
-              : new RE2.default(rule.regexp, modifiers ?? 'i')
-          } else {
-            if (!(rule.regexp instanceof RE2.default) && !(rule.regexp instanceof RegExp)) {
-              throw new Error('Invalid rule.regexp value')
-            }
-            r = rule.regexp
-
-            // Checking that the type is correct...
-            if (rule.regexp_engine === 'regexp') {
-              if (r instanceof RE2.default) {
-                r = new RegExp(r)
-              }
-            } else {
-              if (!(r instanceof RE2.default)) {
-                r = new RE2.default(r)
-              }
-            }
-          }
-
           this.rules.push({
             name: rule.name,
-            regexp: r,
+            regexp: ((typeof rule.regexp === 'string') || modifiers !== undefined)
+              ? new RegExp(rule.regexp, modifiers ?? 'i')
+              : rule.regexp,
             reason: rule.reason
           })
         } else {

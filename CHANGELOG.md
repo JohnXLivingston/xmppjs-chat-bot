@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+### Breaking changes
+
+* Cancelling the use of RE2 RegExp.
+
+It appears that node-re2 fails to install properly on some environments.
+So we cancel the use of node-re2, and project using this chatbot are supposed to only allow regexp from trusted users
+to avoid ReDOS attacks.
+
 ## 0.6.0
 
 * Using RE2 RegExp engine to protect against ReDOS attacks. Regular RegExp object is still available using an option.

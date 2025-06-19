@@ -265,21 +265,21 @@ Options:
 
 A moderation rule can be:
 
-* a string: it will be converted to a RE2 object (regular expression), with a `/i` modifier.
-* a single RegExp or RE2 object
-* a mixed array of string, RegExp or "rule definition"
+* a string: it will be converted to a RegExp object (regular expression), with a `/i` modifier.
+* a single RegExp object
+* an mixed array of string,RegExp or "rule definition"
 
 A "rule definition" is an object like:
 
 ```javascript
 {
   name: "the_rule_name",
-  regexp: /^forbidden$/, // you can also pass a RE2 object
+  regexp: /^forbidden$/,
   reason: "The optional text to display when a message is deleted"
 },
 {
   name: "the_rule_name",
-  regexp: "^forbidden$", // will give /^forbidden$/i (as RE2 object)
+  regexp: "^forbidden$", // will give /^forbidden$/i
   reason: "The optional text to display when a message is deleted"
 },
 {
@@ -289,19 +289,6 @@ A "rule definition" is an object like:
   reason: "The optional text to display when a message is deleted"
 },
 
-```
-
-Note: if your RegExp comes from the outer world, it could be used to do a [ReDOS](https://en.wikipedia.org/wiki/ReDoS) attack.
-So, since version 0.6.0, this bot uses the [RE2](https://github.com/uhop/node-re2) engine. This engine does not support backreferences and lookahead assertions. It has also some edge case scenarios that does not work as RegExp, and it always uses the Unicode mode.
-If you want to use the regular RegExp object, please use the `regexp_engine: 'regexp'` option:
-
-```javascript
-{
-  name: "the_rule_name",
-  regexp: /^forbidden$/, // you can also pass a regexp or RE2 object
-  regexp_engine: 'regexp', // 'regexp' || 're2'
-  reason: "The optional text to display when a message is deleted"
-}
 ```
 
 ### Quotes and Random Quotes
