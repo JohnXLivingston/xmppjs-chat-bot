@@ -2,9 +2,7 @@
 
 ## 0.7.0
 
-### Breaking changes
-
-* Cancelling the use of RE2 RegExp.
+* **BREAKING CHANGE:** Cancelling the use of RE2 RegExp.
 
 It appears that node-re2 fails to install properly on some environments.
 So we cancel the use of node-re2, and project using this chatbot are supposed to only allow regexp from trusted users
